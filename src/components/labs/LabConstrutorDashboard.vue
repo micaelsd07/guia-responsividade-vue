@@ -112,7 +112,7 @@ onBeforeUnmount(() => observador?.disconnect())
     <p v-if="proximaQuebra" class="construtor__conta">
       Para {{ proximaQuebra.colunas }} colunas: {{ proximaQuebra.colunas }} × {{ minimoValido }}rem +
       {{ proximaQuebra.colunas - 1 }} × {{ gapValido }}rem = {{ proximaQuebra.rem }}rem =
-      {{ proximaQuebra.px }}px
+      {{ proximaQuebra.px }}px (com 1rem = {{ remEmPx }}px neste navegador)
     </p>
 
     <div class="construtor__trilho">

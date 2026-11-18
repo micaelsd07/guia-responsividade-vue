@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import PaginaSecao from '@/components/guia/PaginaSecao.vue'
 import BlocoSecao from '@/components/guia/BlocoSecao.vue'
 
-const RESPOSTA = 704
+const RESPOSTA = 696
 
 const palpite = ref('')
 const tentativas = ref(0)
@@ -11,10 +11,19 @@ const verificado = ref(false)
 const solucaoAberta = ref(false)
 
 const dicas = [
-  'Abra o Laboratório 02 (Flexbox e Grid) e coloque 14 na largura mínima e 1 no gap.',
-  'Arraste a largura do contêiner e observe o painel "Próxima coluna". A conta da Pergunta-guia 3 vale para qualquer número de colunas.',
-  'Três colunas têm quantos espaços (gaps) entre elas? Não são três.',
+  'No Laboratório 01 (seção 02), arraste o slider até o fim: quantos px vale a fonte "Muito grande"?',
+  'Releia a Pergunta-guia 2: quando a fonte do navegador muda, o que acontece com o valor de 1rem?',
+  'A Pergunta-guia 3 já tem a conta de 2 colunas em rem. Só falta converter para px com o novo valor de 1rem.',
 ]
+
+const errosComuns = {
+  464: '464px é a resposta para 1rem = 16px (a fonte "Média"). Com a fonte "Muito grande", quanto vale 1rem?',
+  580: 'Você usou 20px, que é a fonte "Grande". Confira no Laboratório 01 quanto vale a "Muito grande".',
+  672: 'Quase! 2 × 14rem = 28rem, mas faltou somar o gap entre as duas colunas.',
+  720: 'Perto! Entre 2 colunas existe só 1 gap, não 2.',
+  336: 'Isso é a largura de uma única coluna. A pergunta é sobre quando aparecem 2.',
+  1056: 'Essa seria a largura para 3 colunas. A pergunta é sobre 2.',
+}
 
 const dicasVisiveis = ref(0)
 
@@ -26,18 +35,15 @@ const retorno = computed(() => {
     return { tipo: 'aviso', texto: 'Digite um número em px, por exemplo 500.' }
   }
   if (valor.value === RESPOSTA) {
-    return { tipo: 'certo', texto: 'Isso! A partir de 704px de contêiner aparecem 3 colunas.' }
+    return {
+      tipo: 'certo',
+      texto: 'Isso! Com a fonte "Muito grande", as 2 colunas só aparecem a partir de 696px de contêiner.',
+    }
   }
-  if (valor.value === 464) {
-    return { tipo: 'erro', texto: '464px é a largura para 2 colunas (Pergunta-guia 3). Agora faça a conta para 3.' }
+  return {
+    tipo: 'erro',
+    texto: errosComuns[valor.value] ?? 'Ainda não. Peça uma dica abaixo ou volte aos laboratórios.',
   }
-  if (valor.value === 672) {
-    return { tipo: 'erro', texto: 'Quase! 3 × 14rem = 672px, mas você esqueceu dos gaps entre as colunas.' }
-  }
-  if (valor.value === 720) {
-    return { tipo: 'erro', texto: 'Perto! Mas entre 3 colunas existem só 2 gaps, não 3.' }
-  }
-  return { tipo: 'erro', texto: 'Ainda não. Use as dicas abaixo ou confira no Laboratório 02.' }
 })
 
 function verificar() {
@@ -53,16 +59,19 @@ function mostrarDica() {
 <template>
   <PaginaSecao
     nome="desafio"
-    resumo="Uma pergunta que só se responde usando o próprio guia. Você vai precisar da conta da seção 03 e do Laboratório 02 para chegar ao número exato."
+    resumo="Uma pergunta que só se responde usando o próprio guia. Ela junta dois laboratórios e duas perguntas-guia: você vai precisar do Simulador de Leitura, do Construtor de Dashboard e entender de verdade o que é 1rem."
   >
     <section class="desafio" aria-labelledby="desafio-pergunta">
       <p class="desafio__selo">O desafio</p>
       <h2 id="desafio-pergunta" class="desafio__pergunta">
-        No nosso Laboratório 02, o Construtor de Dashboard, os cartões usam
-        <code>repeat(auto-fit, minmax(14rem, 1fr))</code> com <code>gap: 1rem</code>. A partir de
-        qual largura do contêiner, em px, aparecem <strong>3 colunas</strong>?
+        A Dona Lúcia tem baixa visão e deixa o navegador sempre com a fonte
+        <strong>"Muito grande"</strong>, a última opção do nosso Laboratório 01. Ela abre o
+        Laboratório 02 sem mexer nos valores padrão. A partir de qual largura do contêiner, em px,
+        ela vê os cartões em <strong>2 colunas</strong>?
       </h2>
-      <p class="desafio__nota">Considere 1rem = 16px (o padrão do navegador).</p>
+      <p class="desafio__nota">
+        Atenção: aqui 1rem não vale 16px. Descubra o valor certo usando o guia.
+      </p>
 
       <form class="desafio__form" @submit.prevent="verificar">
         <label class="campo" for="palpite">
@@ -103,6 +112,7 @@ function mostrarDica() {
         >
           {{ dicasVisiveis === dicas.length ? 'Sem mais dicas' : `Mostrar dica ${dicasVisiveis + 1} de ${dicas.length}` }}
         </button>
+        <RouterLink class="botao botao--contorno" to="/unidades#lab-1-titulo">Ir para o Laboratório 01</RouterLink>
         <RouterLink class="botao botao--contorno" to="/flexbox-grid#lab-2-titulo">Ir para o Laboratório 02</RouterLink>
       </div>
     </BlocoSecao>
@@ -119,15 +129,28 @@ function mostrarDica() {
       </button>
       <div v-if="solucaoAberta" id="solucao-conteudo" class="solucao">
         <ol class="solucao__conta">
-          <li><span>Colunas</span> 3 × 14rem = 42rem</li>
-          <li><span>Gaps</span> 2 espaços × 1rem = 2rem</li>
-          <li><span>Total</span> 42rem + 2rem = 44rem</li>
-          <li><span>Em px</span> 44 × 16px = <strong>704px</strong></li>
+          <li><span>Lab 01</span> "Muito grande" = 24px, então 1rem = 24px</li>
+          <li><span>Lab 02</span> padrão: minmax(14rem, 1fr) e gap 1rem</li>
+          <li><span>Colunas</span> 2 × 14rem = 28rem</li>
+          <li><span>Gap</span> 1 espaço entre 2 colunas = 1rem</li>
+          <li><span>Total</span> 28rem + 1rem = 29rem</li>
+          <li><span>Em px</span> 29 × 24px = <strong>696px</strong></li>
         </ol>
         <p>
-          A regra geral, para <em>n</em> colunas, é: <code>n × mínimo + (n − 1) × gap</code>.
-          Com o contêiner entre 464px e 703px você vê 2 colunas; a partir de 704px, 3 colunas.
-          Confira no Laboratório 02: o painel "Próxima coluna" mostra exatamente esse valor.
+          A conta em rem é a mesma da Pergunta-guia 3 (29rem). O que muda é o valor de 1rem: como
+          explica a Pergunta-guia 2, ele acompanha a fonte escolhida no navegador. Para a Dona
+          Lúcia, 29rem valem 696px, não 464px.
+        </p>
+        <p>
+          <strong>Por que isso é bom:</strong> como os cartões cresceram junto com o texto, o grid
+          espera ter mais espaço antes de dividir a tela em duas colunas. Assim o texto grande nunca
+          fica espremido. Com <code>minmax(224px, 1fr)</code> em px, as colunas se dividiriam nos
+          mesmos 464px e as letras grandes ficariam apertadas dentro de cartões estreitos.
+        </p>
+        <p>
+          <strong>Quer conferir?</strong> Mude a fonte do seu navegador para "Muito grande" (no
+          Chrome: Configurações › Aparência › Tamanho da fonte) e abra o Laboratório 02. Com 14 e 1
+          nos campos, a linha da conta vai mostrar "com 1rem = 24px" e a próxima coluna em 696px.
         </p>
       </div>
     </BlocoSecao>
@@ -159,7 +182,8 @@ function mostrarDica() {
 
 .desafio__pergunta {
   max-width: var(--largura-leitura);
-  font-size: var(--titulo-md);
+  font-size: var(--titulo-sm);
+  hyphens: manual;
   font-weight: 500;
   line-height: 1.3;
   color: #fff;
