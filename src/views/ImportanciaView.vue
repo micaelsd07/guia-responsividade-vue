@@ -1,427 +1,282 @@
 <script setup>
-import PaginaSecao from '@/components/guia/PaginaSecao.vue'
-import BlocoSecao from '@/components/guia/BlocoSecao.vue'
-import CodigoExemplo from '@/components/guia/CodigoExemplo.vue'
+import { ref } from 'vue'
+import AberturaSecao from '@/components/guia/AberturaSecao.vue'
+import CapituloGuia from '@/components/guia/CapituloGuia.vue'
+import CodigoEditor from '@/components/guia/CodigoEditor.vue'
 import PerguntaGuia from '@/components/guia/PerguntaGuia.vue'
 import FontesConsultadas from '@/components/guia/FontesConsultadas.vue'
-import { exemploViewportHtml, exemploMobileFirstCss } from '@/data/exemplos'
+import PaginadorSecoes from '@/components/guia/PaginadorSecoes.vue'
+import FiguraEditorial from '@/components/guia/FiguraEditorial.vue'
+import LayoutEvolucao from '@/components/demos/LayoutEvolucao.vue'
+import ReguaBreakpoints from '@/components/demos/ReguaBreakpoints.vue'
+import ComparacaoViewport from '@/components/demos/ComparacaoViewport.vue'
+import { fotos } from '@/data/fotos'
+import { fontes } from '@/data/fontes'
+import { viewportHtml, mobileFirstCss } from '@/data/exemplos'
+import { usePageMotion } from '@/composables/useMotion'
 
-const fontes = [
+const raiz = ref(null)
+usePageMotion(raiz)
+
+const motivos = [
   {
-    titulo: 'Configuring the Viewport (Safari Web Content Guide)',
-    autor: 'Apple Developer',
-    url: 'https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/UsingtheViewport/UsingtheViewport.html',
+    titulo: 'A maior parte do acesso é pelo celular',
+    texto: 'Segundo o StatCounter, mais da metade do tráfego mundial da web vem de celulares. Uma página que não funciona no celular não funciona para a maioria das pessoas.',
   },
   {
-    titulo: '<meta name="viewport">',
-    autor: 'MDN Web Docs',
-    url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/viewport',
+    titulo: 'O Google lê a versão mobile',
+    texto: 'Com a indexação mobile-first, é a versão de celular da página que o Google usa para indexar e ranquear. Conteúdo escondido no mobile tende a não contar.',
   },
   {
-    titulo: 'Responsive web design basics',
-    autor: 'web.dev (Google)',
-    url: 'https://web.dev/articles/responsive-web-design-basics',
+    titulo: 'Acessibilidade depende de reorganizar',
+    texto: 'Quem usa zoom de 200% ou fonte maior vê, na prática, uma tela mais estreita. Um layout que se reorganiza atende essas pessoas sem esforço extra.',
   },
   {
-    titulo: 'Using media queries',
-    autor: 'MDN Web Docs',
-    url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries',
-  },
-  {
-    titulo: 'Mobile-first indexing best practices',
-    autor: 'Google Search Central',
-    url: 'https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing',
-  },
-  {
-    titulo: 'Desktop vs Mobile vs Tablet Market Share Worldwide',
-    autor: 'StatCounter Global Stats',
-    url: 'https://gs.statcounter.com/platform-market-share/desktop-mobile-tablet',
+    titulo: 'Um código, todas as telas',
+    texto: 'Manter um site para desktop e outro "m." separado dobra o trabalho. Um único HTML com CSS responsivo é mais barato de manter e testar.',
   },
 ]
 </script>
 
 <template>
-  <PaginaSecao
-    nome="importancia"
-    resumo="A mesma página é aberta numa tela de 320px e num monitor de 2560px. Aqui você entende por que isso deixou de ser opcional e qual linha de HTML decide se as suas media queries vão funcionar no celular."
-  >
-    <BlocoSecao id="explicacao" rotulo="Explicação" titulo="A web é aberta em telas de todos os tamanhos">
-      <div class="texto">
-        <p>
-          Um site <strong>responsivo</strong> é aquele cujo layout se adapta ao espaço disponível:
-          as colunas se reorganizam, as imagens encolhem e o menu vira um botão. É o mesmo HTML,
-          com um CSS que reage à largura da tela.
-        </p>
-        <p>Por que isso importa:</p>
-        <ul>
-          <li>
-            <strong>A maioria dos acessos vem do celular.</strong> Segundo o StatCounter, mais da
-            metade do tráfego da web mundial é mobile. Se a página não funciona no celular, ela não
-            funciona para a maior parte das pessoas.
-          </li>
-          <li>
-            <strong>O Google lê a versão mobile.</strong> Com a indexação mobile-first, é a versão
-            de celular da página que conta para aparecer na busca.
-          </li>
-          <li>
-            <strong>Acessibilidade.</strong> Quem usa zoom ou fonte maior também depende de um
-            layout que se reorganiza em vez de quebrar.
-          </li>
-          <li>
-            <strong>Manutenção.</strong> Um único código responsivo sai mais barato do que manter
-            um "site m." separado.
-          </li>
-        </ul>
-        <p>Três peças trabalham juntas:</p>
-      </div>
+  <div ref="raiz">
+    <AberturaSecao nome="importancia" />
 
-      <ol class="pecas">
-        <li class="peca">
-          <span class="peca__numero">1</span>
-          <h3>Meta viewport</h3>
-          <p>Diz ao navegador do celular qual largura usar para desenhar a página.</p>
-        </li>
-        <li class="peca">
-          <span class="peca__numero">2</span>
-          <h3>Media queries</h3>
-          <p>Aplicam regras de CSS só a partir de certas larguras de tela.</p>
-        </li>
-        <li class="peca">
-          <span class="peca__numero">3</span>
-          <h3>Mobile-first</h3>
-          <p>
-            Escreve-se primeiro o CSS do celular e, depois, acrescenta-se o das telas maiores com
-            <code>min-width</code>.
-          </p>
+    <CapituloGuia id="o-que-e" indice="01.1" titulo="O que é responsividade">
+      <div class="prose" data-reveal>
+        <p>
+          Um site <strong>responsivo</strong> é aquele cujo layout se adapta ao espaço disponível. É o mesmo HTML,
+          com um CSS que reage à largura da tela: as colunas se reorganizam, as imagens encolhem, o menu vira um
+          botão.
+        </p>
+        <p>
+          A ideia ganhou nome em 2010, quando Ethan Marcotte publicou o artigo <em>Responsive Web Design</em> na A
+          List Apart, juntando três ingredientes: <strong>grids fluidos</strong>, <strong>imagens flexíveis</strong>
+          e <strong>media queries</strong>.
+        </p>
+      </div>
+      <FiguraEditorial
+        :foto="fotos.celularMao"
+        numero="01.1"
+        legenda="Uma página aberta no celular, com o notebook ao fundo. Mesma página, duas telas, duas organizações."
+        proporcao="16 / 10"
+        sizes="(min-width: 80rem) 55vw, 100vw"
+      />
+    </CapituloGuia>
+
+    <CapituloGuia id="por-que" indice="01.2" titulo="Por que importa">
+      <ol class="motivos">
+        <li v-for="(motivo, i) in motivos" :key="motivo.titulo" class="motivo" data-reveal>
+          <span class="motivo__n">{{ String(i + 1).padStart(2, '0') }}</span>
+          <h3 class="motivo__titulo">{{ motivo.titulo }}</h3>
+          <p class="motivo__texto">{{ motivo.texto }}</p>
         </li>
       </ol>
+    </CapituloGuia>
 
-      <figure class="comparacao">
-        <div class="comparacao__celulares">
-          <div class="celular">
-            <p class="celular__legenda celular__legenda--erro">Sem meta viewport</p>
-            <div class="celular__moldura">
-              <div class="celular__tela">
-                <div class="desktop" aria-hidden="true">
-                  <div class="desktop__topo">
-                    <span class="desktop__logo">Loja Roxa</span>
-                    <span class="desktop__links">Início · Produtos · Contato · Carrinho</span>
-                  </div>
-                  <div class="desktop__heroi">
-                    <p>Ofertas da semana</p>
-                    <span></span>
-                  </div>
-                  <div class="desktop__colunas">
-                    <span></span><span></span><span></span>
-                  </div>
-                  <div class="desktop__linhas">
-                    <span></span><span></span><span></span><span></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="celular">
-            <p class="celular__legenda celular__legenda--ok">Com meta viewport</p>
-            <div class="celular__moldura">
-              <div class="celular__tela">
-                <div class="mobile" aria-hidden="true">
-                  <div class="mobile__topo">
-                    <span class="mobile__logo">Loja Roxa</span>
-                    <span class="mobile__menu"><span></span><span></span><span></span></span>
-                  </div>
-                  <div class="mobile__heroi">
-                    <p>Ofertas da semana</p>
-                    <span></span>
-                  </div>
-                  <span class="mobile__card"></span>
-                  <span class="mobile__card"></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <figcaption class="comparacao__legenda">
-          À esquerda, o navegador desenha a página com cerca de 980px e encolhe tudo para caber
-          na tela. À direita, a página usa a largura real do aparelho e o layout mobile aparece.
-        </figcaption>
-      </figure>
-    </BlocoSecao>
-
-    <BlocoSecao id="codigo" rotulo="Exemplo de código" titulo="A linha que liga o mobile-first">
-      <div class="texto">
+    <CapituloGuia id="evolucao" indice="01.3" titulo="Fixo → fluido → responsivo" largo>
+      <template #aside>
         <p>
-          A meta tag fica no <code>&lt;head&gt;</code> do <code>index.html</code>. Projetos
-          criados com <code>npm create vue@latest</code> já vêm com ela. Depois, o CSS começa
-          pelo celular e vai ganhando regras com <code>min-width</code>.
+          Três gerações de layout com a mesma página. Arraste a largura ou deixe a janela encolher sozinha:
+          o fixo vaza, o fluido espreme, o responsivo reorganiza.
+        </p>
+      </template>
+      <div class="evolucao-intro grid">
+        <div class="evolucao-intro__foto">
+          <FiguraEditorial
+            :foto="fotos.monitoresCrt"
+            numero="01.2"
+            legenda="Monitores de tubo: a era em que se desenhava para uma tela de 800 ou 1024px e se fixava a largura em pixels."
+            proporcao="4 / 3"
+            sizes="(min-width: 80rem) 30vw, 100vw"
+            parallax
+          />
+        </div>
+        <div class="evolucao-intro__texto prose" data-reveal>
+          <p>
+            <strong>Fixo.</strong> O conteúdo tinha largura em pixels, como <code>960px</code>. Em telas menores
+            aparecia a rolagem horizontal; em telas maiores, sobravam faixas vazias.
+          </p>
+          <p>
+            <strong>Fluido.</strong> As larguras passaram a ser porcentagens. A página acompanhava a janela, mas três
+            colunas de 33% num celular viram três tiras ilegíveis.
+          </p>
+          <p>
+            <strong>Responsivo.</strong> Larguras fluidas mais <strong>media queries</strong>: a partir de certas
+            larguras, o layout muda de estrutura. É o padrão atual.
+          </p>
+        </div>
+      </div>
+      <LayoutEvolucao data-reveal />
+    </CapituloGuia>
+
+    <CapituloGuia id="mobile-first" indice="01.4" titulo="Mobile-first e media queries">
+      <div class="prose" data-reveal>
+        <p>
+          <strong>Media queries</strong> aplicam CSS só quando uma condição é verdadeira, como a largura da janela.
+          No <strong>mobile-first</strong>, o CSS sem media query é o do celular. Depois, cada
+          <code>@media (min-width: …)</code> acrescenta regras para telas maiores.
+        </p>
+        <p>
+          A vantagem: o celular, que costuma ter a pior conexão, baixa o layout mais simples, e as telas grandes
+          recebem complementos, não correções.
         </p>
       </div>
-      <CodigoExemplo arquivo="index.html" linguagem="html" :codigo="exemploViewportHtml" />
-      <CodigoExemplo arquivo="estilos.css" linguagem="css" :codigo="exemploMobileFirstCss" />
-    </BlocoSecao>
+      <ReguaBreakpoints data-reveal />
+      <CodigoEditor arquivo="estilos.css" linguagem="css" :codigo="mobileFirstCss" :destaque="[1, 8, 15]" data-reveal />
+    </CapituloGuia>
+
+    <CapituloGuia id="viewport" indice="01.5" titulo="A meta viewport">
+      <div class="prose" data-reveal>
+        <p>
+          Uma linha no <code>&lt;head&gt;</code> decide se tudo o que vimos até aqui funciona no celular. Abaixo, o
+          mesmo site da Fig. 00 aberto em um celular de 390px, com e sem ela.
+        </p>
+      </div>
+      <ComparacaoViewport data-reveal />
+      <CodigoEditor arquivo="index.html" linguagem="html" :codigo="viewportHtml" :destaque="[7]" data-reveal />
+    </CapituloGuia>
 
     <PerguntaGuia
-      numero="1"
+      id="pergunta-1"
+      numero="01"
       pergunta="Um site tem media queries bem escritas, mas não tem a meta tag viewport. No celular, ele aparece como a versão de computador, só que minúscula. Por que isso acontece, e o que a meta viewport muda?"
     >
       <p>
-        Sem a meta viewport, o navegador do celular não sabe que a página foi pensada para telas
-        pequenas. Por segurança, ele <strong>assume que o site é para desktop</strong>: cria uma
-        tela virtual com cerca de <strong>980px de largura</strong>, desenha a página nesse
-        tamanho e depois <strong>diminui o zoom</strong> até tudo caber nos ~390px reais da tela.
-        O resultado é a versão de computador, só que minúscula.
+        Sem a meta viewport, o navegador do celular não sabe que a página foi pensada para telas pequenas. Por
+        segurança, ele <strong>assume que o site é para desktop</strong>: cria um viewport de layout com cerca de
+        <strong>980px de largura</strong>, desenha a página nesse tamanho e depois <strong>diminui o zoom</strong>
+        até tudo caber nos ~390px reais da tela. É a versão de computador, só que minúscula.
       </p>
       <p>
-        E as media queries? Elas perguntam a largura do viewport, e o navegador responde
-        "980px". Então uma regra como <code>@media (min-width: 48rem)</code> (768px) é ativada
-        mesmo no celular, e o CSS pensado para telas pequenas nunca entra em ação.
+        As media queries perguntam a largura do viewport, e o navegador responde "980px". Então uma regra como
+        <code>@media (min-width: 48rem)</code> (768px) é ativada mesmo no celular, e o CSS pensado para telas
+        pequenas nunca entra em ação.
       </p>
       <p>
-        A tag
-        <code>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</code>
-        muda isso: <code>width=device-width</code> <strong>força o navegador a respeitar a
-        largura real da tela do celular</strong> (por exemplo, 390px) como largura do viewport, e
-        <code>initial-scale=1.0</code> abre a página sem zoom. Agora as media queries recebem a
-        largura verdadeira e o layout mobile aparece como planejado.
+        A tag <code>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</code> muda isso:
+        <code>width=device-width</code> <strong>força o navegador a respeitar a largura real da tela do
+        celular</strong> como largura do viewport, e <code>initial-scale=1.0</code> abre a página sem zoom. Agora as
+        media queries recebem a largura verdadeira e o layout mobile aparece como planejado.
       </p>
+      <template #visual>
+        <dl class="escala" data-assemble>
+          <div data-piece>
+            <dt class="label">Viewport sem a tag</dt>
+            <dd><span data-count="980">980</span>px</dd>
+          </div>
+          <div data-piece>
+            <dt class="label">Tela real</dt>
+            <dd><span data-count="390">390</span>px</dd>
+          </div>
+          <div data-piece>
+            <dt class="label">Zoom aplicado</dt>
+            <dd>×0,40</dd>
+          </div>
+          <div data-piece class="escala__final">
+            <dt class="label">Texto de 16px vira</dt>
+            <dd>~6,4px</dd>
+          </div>
+        </dl>
+      </template>
     </PerguntaGuia>
 
-    <FontesConsultadas :fontes="fontes" />
-  </PaginaSecao>
+    <FontesConsultadas numero="01" :fontes="fontes.importancia" />
+    <PaginadorSecoes nome="importancia" />
+  </div>
 </template>
 
 <style scoped>
-.pecas {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
-  gap: var(--espaco-3);
+.motivos {
   margin: 0;
   padding: 0;
   list-style: none;
+  border-top: var(--border-strong);
 }
 
-.peca {
+.motivo {
   display: grid;
-  align-content: start;
-  gap: var(--espaco-2);
-  padding: var(--espaco-4);
-  border: var(--borda);
-  border-radius: var(--raio-md);
-  background: var(--cor-superficie);
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-5) 0;
+  border-bottom: var(--border-soft);
 }
 
-.peca__numero {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--cor-roxo-800);
-  color: var(--cor-ambar);
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-sm);
-}
-
-.peca h3 {
-  font-size: var(--titulo-sm);
-}
-
-.peca p {
-  font-size: var(--texto-sm);
-  color: var(--cor-tinta-suave);
-}
-
-.comparacao {
-  display: grid;
-  gap: var(--espaco-4);
-  margin: 0;
-  padding: var(--espaco-5) var(--espaco-4);
-  border-radius: var(--raio-lg);
-  background: var(--cor-roxo-100);
-}
-
-.comparacao__celulares {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--espaco-5);
-}
-
-.comparacao__legenda {
-  max-width: var(--largura-leitura);
-  margin: 0 auto;
-  font-size: var(--texto-sm);
-  text-align: center;
-  color: var(--cor-tinta-suave);
-}
-
-.celular {
-  display: grid;
-  justify-items: center;
-  gap: var(--espaco-2);
-}
-
-.celular__legenda {
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.celular__legenda--erro {
-  color: var(--cor-erro);
-}
-
-.celular__legenda--ok {
-  color: var(--cor-sucesso);
-}
-
-.celular__moldura {
-  padding: 0.5rem;
-  border-radius: 1.5rem;
-  background: var(--cor-roxo-950);
-}
-
-.celular__tela {
-  position: relative;
-  width: 9rem;
-  height: 17rem;
-  border-radius: 1rem;
-  background: #fff;
-  overflow: hidden;
-}
-
-.desktop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 61.25rem;
-  padding: 2rem;
-  transform: scale(calc(9 / 61.25));
-  transform-origin: top left;
-  display: grid;
-  gap: 2rem;
-}
-
-.desktop__topo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1.25rem;
-}
-
-.desktop__logo {
-  font-family: var(--fonte-titulo);
-  font-size: 2rem;
+.motivo__n {
+  grid-row: span 2;
+  font-family: var(--font-heading);
+  font-size: var(--heading-md);
   font-weight: 700;
-  color: var(--cor-roxo-800);
+  font-stretch: 75%;
+  line-height: 1;
+  color: var(--color-accent);
 }
 
-.desktop__heroi {
-  display: grid;
-  gap: 1rem;
-  padding: 3rem;
-  border-radius: 1rem;
-  background: var(--cor-roxo-700);
-  color: #fff;
-  font-family: var(--fonte-titulo);
-  font-size: 3rem;
-}
-
-.desktop__heroi span {
-  width: 12rem;
-  height: 3rem;
-  border-radius: 0.5rem;
-  background: var(--cor-ambar);
-}
-
-.desktop__colunas {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-}
-
-.desktop__colunas span {
-  height: 14rem;
-  border-radius: 1rem;
-  background: var(--cor-roxo-200);
-}
-
-.desktop__linhas {
-  display: grid;
-  gap: 1rem;
-}
-
-.desktop__linhas span {
-  height: 1rem;
-  border-radius: 1rem;
-  background: var(--cor-linha);
-}
-
-.mobile {
-  display: grid;
-  gap: 0.5rem;
-  padding: 0.5rem;
-}
-
-.mobile__topo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.mobile__logo {
-  font-family: var(--fonte-titulo);
-  font-size: var(--texto-sm);
+.motivo__titulo {
+  font-size: var(--text-xl);
   font-weight: 700;
-  color: var(--cor-roxo-800);
+  font-stretch: 82%;
 }
 
-.mobile__menu {
+.motivo__texto {
+  max-width: var(--measure);
+  color: var(--color-ink-2);
+}
+
+.evolucao-intro {
+  row-gap: var(--space-5);
+}
+
+.evolucao-intro__foto,
+.evolucao-intro__texto {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.escala {
   display: grid;
-  gap: 0.125rem;
-  width: 0.875rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--hairline);
+  background: var(--color-dark-line);
+  border: var(--hairline) solid var(--color-dark-line);
 }
 
-.mobile__menu span {
-  height: 0.125rem;
-  background: var(--cor-roxo-800);
-}
-
-.mobile__heroi {
+.escala div {
   display: grid;
-  gap: 0.375rem;
-  padding: 0.75rem 0.5rem;
-  border-radius: 0.5rem;
-  background: var(--cor-roxo-700);
-  color: #fff;
-  font-family: var(--fonte-titulo);
-  font-size: var(--texto-base);
-  line-height: 1.15;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-dark);
 }
 
-.mobile__heroi span {
-  width: 3.5rem;
-  height: 1rem;
-  border-radius: 0.25rem;
-  background: var(--cor-ambar);
+.escala dt {
+  color: var(--color-on-dark-2);
 }
 
-.mobile__card {
-  height: 4rem;
-  border-radius: 0.5rem;
-  background: var(--cor-roxo-200);
+.escala dd {
+  font-family: var(--font-heading);
+  font-size: var(--heading-md);
+  font-weight: 700;
+  font-stretch: 78%;
+  line-height: 1;
 }
 
-@media (min-width: 48rem) {
-  .comparacao {
-    padding: var(--espaco-6);
+.escala__final {
+  background: var(--color-signal) !important;
+}
+
+.escala__final dt,
+.escala__final dd {
+  color: var(--color-ink);
+}
+
+@media (min-width: 80rem) {
+  .evolucao-intro__foto {
+    grid-column: 1 / span 5;
   }
 
-  .comparacao__celulares {
-    gap: var(--espaco-8);
+  .evolucao-intro__texto {
+    grid-column: 7 / -1;
+    align-self: center;
   }
 }
 </style>

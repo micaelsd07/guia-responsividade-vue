@@ -1,245 +1,225 @@
 <script setup>
-import PaginaSecao from '@/components/guia/PaginaSecao.vue'
-import BlocoSecao from '@/components/guia/BlocoSecao.vue'
-import CodigoExemplo from '@/components/guia/CodigoExemplo.vue'
+import { ref } from 'vue'
+import AberturaSecao from '@/components/guia/AberturaSecao.vue'
+import CapituloGuia from '@/components/guia/CapituloGuia.vue'
+import CodigoEditor from '@/components/guia/CodigoEditor.vue'
 import PerguntaGuia from '@/components/guia/PerguntaGuia.vue'
 import FontesConsultadas from '@/components/guia/FontesConsultadas.vue'
-import MolduraLab from '@/components/guia/MolduraLab.vue'
+import PaginadorSecoes from '@/components/guia/PaginadorSecoes.vue'
+import FiguraEditorial from '@/components/guia/FiguraEditorial.vue'
+import TabelaUnidades from '@/components/demos/TabelaUnidades.vue'
+import LabConversorUnidades from '@/components/labs/LabConversorUnidades.vue'
 import LabSimuladorLeitura from '@/components/labs/LabSimuladorLeitura.vue'
-import { exemploUnidadesCss } from '@/data/exemplos'
+import { fotos } from '@/data/fotos'
+import { fontes } from '@/data/fontes'
+import { unidadesCss } from '@/data/exemplos'
+import { usePageMotion } from '@/composables/useMotion'
 
-const unidades = [
-  {
-    nome: 'px',
-    tipo: 'absoluta',
-    relativa: 'Nada: é um pixel CSS fixo.',
-    uso: 'Bordas finas, sombras e detalhes que não precisam crescer. Evite em fontes.',
-  },
-  {
-    nome: 'rem',
-    tipo: 'relativa',
-    relativa: 'Tamanho da fonte do elemento raiz, o <html>.',
-    uso: 'Fontes, espaçamentos, larguras máximas. A escolha padrão para quase tudo.',
-  },
-  {
-    nome: 'em',
-    tipo: 'relativa',
-    relativa: 'Tamanho da fonte do próprio elemento (do pai, se usado no font-size).',
-    uso: 'Padding de botões e ícones que acompanham o texto. Cuidado: acumula em elementos aninhados.',
-  },
-  {
-    nome: '%',
-    tipo: 'relativa',
-    relativa: 'O tamanho do elemento pai.',
-    uso: 'Larguras fluidas, como width: 50% ou max-width: 100%.',
-  },
-  {
-    nome: 'fr',
-    tipo: 'relativa',
-    relativa: 'Uma fração do espaço livre de um grid.',
-    uso: 'Colunas de grid: 1fr 1fr divide igualmente; 2fr 1fr dá o dobro à primeira.',
-  },
-  {
-    nome: 'vw',
-    tipo: 'relativa',
-    relativa: '1% da largura da viewport (a janela).',
-    uso: 'Títulos que crescem com a tela, de preferência dentro de clamp(). Atenção: 100vw inclui a barra de rolagem e pode gerar rolagem horizontal.',
-  },
-  {
-    nome: 'vh',
-    tipo: 'relativa',
-    relativa: '1% da altura da viewport.',
-    uso: 'Seções altas no desktop. No celular, 100vh pode ficar maior que a área visível por causa da barra do navegador.',
-  },
-  {
-    nome: 'dvh',
-    tipo: 'relativa',
-    relativa: '1% da altura dinâmica: muda quando a barra do navegador aparece ou some.',
-    uso: 'Telas cheias no celular: min-height: 100dvh.',
-  },
-  {
-    nome: 'ch',
-    tipo: 'relativa',
-    relativa: 'A largura do caractere "0" na fonte atual.',
-    uso: 'Limitar o comprimento da linha de leitura (max-width: 65ch) e campos de tamanho fixo, como CEP.',
-  },
-]
+const raiz = ref(null)
+usePageMotion(raiz)
 
-const fontes = [
-  {
-    titulo: 'CSS values and units',
-    autor: 'MDN Web Docs',
-    url: 'https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units',
-  },
-  {
-    titulo: '<length> (inclui vh, dvh e ch)',
-    autor: 'MDN Web Docs',
-    url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/length',
-  },
-  {
-    titulo: 'Learn CSS: Sizing units',
-    autor: 'web.dev (Google)',
-    url: 'https://web.dev/learn/css/sizing',
-  },
-  {
-    titulo: 'Understanding Success Criterion 1.4.4: Resize Text',
-    autor: 'W3C · WCAG 2.1',
-    url: 'https://www.w3.org/WAI/WCAG21/Understanding/resize-text.html',
-  },
-  {
-    titulo: 'The Surprising Truth About Pixels and Accessibility',
-    autor: 'Josh W. Comeau',
-    url: 'https://www.joshwcomeau.com/css/surprising-truth-about-pixels-and-accessibility/',
-  },
+const regras = [
+  { caso: 'Tamanho de texto', unidade: 'rem', porque: 'acompanha a fonte escolhida pela pessoa' },
+  { caso: 'Margens e espaçamentos', unidade: 'rem', porque: 'o espaço cresce junto com o texto' },
+  { caso: 'Padding de botão', unidade: 'em', porque: 'o botão maior ganha respiro proporcional' },
+  { caso: 'Largura de colunas', unidade: '% · fr', porque: 'dividem o espaço que existe' },
+  { caso: 'Linha de leitura', unidade: 'ch', porque: '45 a 75 caracteres por linha é o conforto' },
+  { caso: 'Tela cheia no celular', unidade: 'dvh', porque: 'desconta a barra do navegador' },
+  { caso: 'Título que cresce com a tela', unidade: 'clamp(rem, vw, rem)', porque: 'fluido, mas com limites' },
+  { caso: 'Borda de 1 pixel', unidade: 'px', porque: 'detalhe que não precisa crescer' },
 ]
 </script>
 
 <template>
-  <PaginaSecao
-    nome="unidades"
-    resumo="Cada unidade CSS responde a uma pergunta diferente: relativa a quê? Escolher bem é o que separa um layout que se adapta de um que quebra, ou que ignora quem precisa de letras maiores."
-  >
-    <BlocoSecao id="explicacao" rotulo="Explicação" titulo="Absolutas e relativas">
-      <div class="texto">
+  <div ref="raiz">
+    <AberturaSecao nome="unidades" />
+
+    <CapituloGuia id="absolutas-relativas" indice="02.1" titulo="Absolutas e relativas">
+      <div class="prose" data-reveal>
         <p>
-          Uma unidade <strong>absoluta</strong> tem sempre o mesmo tamanho: <code>16px</code> são
-          16px em qualquer contexto. Uma unidade <strong>relativa</strong> é calculada a partir de
-          outra coisa: a fonte da raiz, o elemento pai, o tamanho da janela...
+          Uma unidade <strong>absoluta</strong> tem sempre o mesmo tamanho: <code>16px</code> são 16px em qualquer
+          contexto. Uma unidade <strong>relativa</strong> é calculada a partir de outra coisa: a fonte da raiz, a
+          fonte do elemento, o tamanho do pai, o tamanho da janela.
         </p>
         <p>
-          Em layouts responsivos, as relativas são as protagonistas, porque acompanham a tela e as
-          preferências de quem está lendo. Neste guia, por exemplo, todas as fontes e
-          espaçamentos estão em <code>rem</code>.
+          Em um layout responsivo, as relativas são as protagonistas porque acompanham a tela e as preferências de
+          quem lê. A pergunta certa nunca é "quantos pixels?", e sim <strong>"relativo a quê?"</strong>.
         </p>
       </div>
+      <FiguraEditorial
+        :foto="fotos.lupaOculos"
+        numero="02.1"
+        legenda="Lupa e óculos sobre um livro. Muita gente lê a web com a fonte aumentada nas configurações, e o CSS precisa respeitar essa escolha."
+        proporcao="21 / 9"
+        posicao="50% 40%"
+        sizes="(min-width: 80rem) 55vw, 100vw"
+      />
+    </CapituloGuia>
 
-      <dl class="unidades">
-        <div v-for="unidade in unidades" :key="unidade.nome" class="unidade">
-          <dt class="unidade__nome">
-            <code>{{ unidade.nome }}</code>
-            <span class="unidade__tipo" :class="`unidade__tipo--${unidade.tipo}`">{{ unidade.tipo }}</span>
-          </dt>
-          <dd class="unidade__relativa">
-            <span>Relativa a</span>
-            {{ unidade.relativa }}
-          </dd>
-          <dd class="unidade__uso">
-            <span>Quando usar</span>
-            {{ unidade.uso }}
-          </dd>
-        </div>
-      </dl>
-    </BlocoSecao>
+    <CapituloGuia id="especimes" indice="02.2" titulo="Nove unidades, ao vivo" largo>
+      <template #aside>
+        <p>Cada barra abaixo usa a unidade de verdade, e o número ao lado é medido no seu navegador agora.</p>
+      </template>
+      <TabelaUnidades />
+      <CodigoEditor arquivo="unidades.css" linguagem="css" :codigo="unidadesCss" data-reveal />
+    </CapituloGuia>
 
-    <BlocoSecao id="codigo" rotulo="Exemplo de código" titulo="Cada unidade no seu lugar">
-      <CodigoExemplo arquivo="unidades.css" linguagem="css" :codigo="exemploUnidadesCss" />
-    </BlocoSecao>
+    <CapituloGuia id="lab-01-capitulo" indice="02.3" titulo="Converter para entender" largo>
+      <LabConversorUnidades />
+    </CapituloGuia>
 
-    <MolduraLab
-      numero="1"
-      titulo="Simulador de leitura"
-      descricao="Dois anúncios idênticos: o Cartão A tem todos os tamanhos escritos em px; o Cartão B usa os mesmos valores em rem. Aumente a fonte do navegador e veja qual deles respeita a preferência de quem lê."
-    >
+    <CapituloGuia id="lab-02-capitulo" indice="02.4" titulo="Quem decide o tamanho da letra?" largo>
+      <template #aside>
+        <p>Este laboratório responde, na prática, à Pergunta-guia 02.</p>
+      </template>
       <LabSimuladorLeitura />
-    </MolduraLab>
+    </CapituloGuia>
+
+    <CapituloGuia id="regras" indice="02.5" titulo="Regras de bolso">
+      <ol class="regras">
+        <li v-for="regra in regras" :key="regra.caso" class="regra" data-reveal>
+          <span class="regra__caso">{{ regra.caso }}</span>
+          <code class="regra__unidade">{{ regra.unidade }}</code>
+          <span class="regra__porque">{{ regra.porque }}</span>
+        </li>
+      </ol>
+    </CapituloGuia>
 
     <PerguntaGuia
-      numero="2"
+      id="pergunta-2"
+      numero="02"
       pergunta="Uma pessoa com baixa visão aumenta o tamanho da fonte nas configurações do navegador. O texto definido em px continua do mesmo tamanho, e o definido em rem aumenta. Por que essa diferença acontece?"
     >
       <p>
-        <code>px</code> é uma <strong>unidade absoluta</strong>: 16px são sempre 16px, não
-        importa o que o usuário configurou. Quando alguém aumenta a fonte nas configurações, o
-        navegador muda o tamanho de fonte padrão do elemento raiz, o <code>&lt;html&gt;</code>
-        (de 16px para 20px ou 24px, por exemplo). Um texto com <code>font-size: 16px</code>
+        <code>px</code> é uma <strong>unidade absoluta</strong>: 16px são sempre 16px. Quando alguém aumenta a fonte
+        nas configurações, o navegador muda o tamanho de fonte padrão do elemento raiz, o <code>&lt;html&gt;</code>,
+        de 16px para 20px ou 24px, por exemplo. Um texto com <code>font-size: 16px</code>
         <strong>ignora essa configuração de acessibilidade</strong>.
       </p>
       <p>
-        <code>rem</code> significa <em>root em</em>: <strong>1rem é igual ao tamanho da fonte do
-        elemento raiz</strong>. Se a raiz passa de 16px para 24px, 1rem passa a valer 24px, e
-        tudo o que foi escrito em rem (fontes, espaçamentos, larguras) cresce na mesma
-        proporção, mantendo o layout harmônico.
+        <code>rem</code> significa <em>root em</em>: <strong>1rem é igual ao tamanho da fonte do elemento raiz</strong>.
+        Se a raiz passa de 16px para 24px, 1rem passa a valer 24px, e tudo o que foi escrito em rem (fontes,
+        espaçamentos, larguras) cresce na mesma proporção.
       </p>
       <p>
-        Por isso, rem não é só uma preferência de estilo: é o que permite que uma pessoa com baixa
-        visão leia o site com letras maiores. Vale notar que o zoom da página (Ctrl +) amplia
-        até o px; a diferença aparece justamente na configuração de fonte, que muita gente usa
-        de forma permanente no celular e no computador.
+        Por isso rem não é só preferência de estilo: é o que permite que uma pessoa com baixa visão leia o site com
+        letras maiores sem quebrar o layout (critério 1.4.4 das WCAG). O zoom da página (Ctrl +) amplia até o px; a
+        diferença aparece na configuração de fonte, que muita gente usa de forma permanente.
       </p>
+      <template #visual>
+        <div class="balanca" data-assemble>
+          <p class="label balanca__rotulo" data-piece>Fonte do navegador: 16px → 24px</p>
+          <div class="balanca__linha" data-piece>
+            <span class="balanca__nome">20px</span>
+            <span class="balanca__barra balanca__barra--px" style="width: 40%"></span>
+            <span class="balanca__antes">20px</span>
+            <span class="balanca__depois">20px</span>
+          </div>
+          <div class="balanca__linha" data-piece>
+            <span class="balanca__nome">1.25rem</span>
+            <span class="balanca__barra balanca__barra--rem" style="width: 60%"></span>
+            <span class="balanca__antes">20px</span>
+            <span class="balanca__depois">30px</span>
+          </div>
+          <p class="balanca__nota" data-piece>1.25 × 24px = 30px. O px não sai do lugar.</p>
+        </div>
+      </template>
     </PerguntaGuia>
 
-    <FontesConsultadas :fontes="fontes" />
-  </PaginaSecao>
+    <FontesConsultadas numero="02" :fontes="fontes.unidades" />
+    <PaginadorSecoes nome="unidades" />
+  </div>
 </template>
 
 <style scoped>
-.unidades {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
-  gap: var(--espaco-3);
+.regras {
   margin: 0;
-}
-
-.unidade {
-  display: grid;
-  align-content: start;
-  gap: var(--espaco-3);
-  padding: var(--espaco-4);
-  border: var(--borda);
-  border-radius: var(--raio-md);
-  background: var(--cor-superficie);
-}
-
-.unidade__nome {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--espaco-2);
-}
-
-.unidade__nome code {
   padding: 0;
-  background: none;
-  font-size: var(--titulo-md);
-  font-weight: 500;
-  color: var(--cor-roxo-800);
+  list-style: none;
+  border-top: var(--border-strong);
 }
 
-.unidade__tipo {
-  padding: 0 var(--espaco-2);
-  border-radius: 1rem;
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.unidade__tipo--absoluta {
-  background: var(--cor-erro-suave);
-  color: var(--cor-erro);
-}
-
-.unidade__tipo--relativa {
-  background: var(--cor-sucesso-suave);
-  color: var(--cor-sucesso);
-}
-
-.unidade dd {
+.regra {
   display: grid;
-  gap: var(--espaco-1);
-  margin: 0;
-  font-size: var(--texto-sm);
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: var(--border-soft);
 }
 
-.unidade dd span {
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--cor-roxo-600);
+.regra__caso {
+  font-weight: 600;
 }
 
-.unidade__uso {
-  color: var(--cor-tinta-suave);
+.regra__unidade {
+  justify-self: end;
+}
+
+.regra__porque {
+  grid-column: 1 / -1;
+  font-size: var(--text-sm);
+  color: var(--color-ink-3);
+}
+
+.balanca {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: var(--hairline) solid var(--color-dark-line);
+}
+
+.balanca__rotulo {
+  color: var(--color-signal);
+}
+
+.balanca__linha {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.balanca__barra {
+  height: 0.75rem;
+}
+
+.balanca__barra--px {
+  background: #ff8a70;
+}
+
+.balanca__barra--rem {
+  background: var(--color-signal);
+}
+
+.balanca__antes {
+  color: var(--color-on-dark-2);
+  text-decoration: line-through;
+}
+
+.balanca__depois {
+  color: var(--color-on-dark);
+  font-weight: 500;
+}
+
+.balanca__nota {
+  font-size: var(--text-sm);
+  color: var(--color-on-dark-2);
+}
+
+@media (min-width: 48rem) {
+  .regra {
+    grid-template-columns: 14rem 12rem minmax(0, 1fr);
+    align-items: baseline;
+  }
+
+  .regra__unidade {
+    justify-self: start;
+  }
+
+  .regra__porque {
+    grid-column: auto;
+  }
 }
 </style>

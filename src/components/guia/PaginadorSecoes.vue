@@ -12,19 +12,22 @@ const proxima = computed(() => secoes[indice.value + 1])
 </script>
 
 <template>
-  <nav class="paginador" aria-label="Navegação entre seções">
+  <nav class="paginador wrap" aria-label="Seção anterior e próxima">
     <RouterLink v-if="anterior" :to="anterior.caminho" class="paginador__link">
-      <span class="paginador__direcao">← Anterior</span>
-      <span class="paginador__titulo">{{ anterior.numero }} · {{ anterior.titulo }}</span>
+      <span class="label">← Anterior · {{ anterior.numero }}</span>
+      <span class="paginador__titulo">{{ anterior.titulo }}</span>
     </RouterLink>
-    <span v-else></span>
-    <RouterLink
-      v-if="proxima"
-      :to="proxima.caminho"
-      class="paginador__link paginador__link--proxima"
-    >
-      <span class="paginador__direcao">Próxima →</span>
-      <span class="paginador__titulo">{{ proxima.numero }} · {{ proxima.titulo }}</span>
+    <RouterLink v-else to="/" class="paginador__link">
+      <span class="label">← Capa</span>
+      <span class="paginador__titulo">Uma interface. Qualquer tela.</span>
+    </RouterLink>
+    <RouterLink v-if="proxima" :to="proxima.caminho" class="paginador__link paginador__link--proxima">
+      <span class="label">Próxima · {{ proxima.numero }} →</span>
+      <span class="paginador__titulo">{{ proxima.titulo }}</span>
+    </RouterLink>
+    <RouterLink v-else to="/laboratorios" class="paginador__link paginador__link--proxima">
+      <span class="label">Revisar →</span>
+      <span class="paginador__titulo">Todos os laboratórios</span>
     </RouterLink>
   </nav>
 </template>
@@ -32,48 +35,38 @@ const proxima = computed(() => secoes[indice.value + 1])
 <style scoped>
 .paginador {
   display: grid;
-  gap: var(--espaco-3);
-  margin-top: var(--espaco-8);
-}
-
-.paginador > span:empty {
-  display: none;
+  margin-top: var(--space-section);
 }
 
 .paginador__link {
   display: grid;
-  gap: var(--espaco-1);
-  padding: var(--espaco-4);
-  border: var(--borda);
-  border-radius: var(--raio-md);
-  background: var(--cor-superficie);
+  gap: var(--space-2);
+  padding: var(--space-5) 0;
+  border-top: var(--border-strong);
   text-decoration: none;
-  transition: border-color 0.15s ease;
 }
 
-.paginador__link:hover {
-  border-color: var(--cor-roxo-400);
-}
-
-.paginador__direcao {
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
-  color: var(--cor-roxo-600);
+.paginador__link .label {
+  color: var(--color-ink-3);
 }
 
 .paginador__titulo {
-  font-family: var(--fonte-titulo);
-  font-size: var(--titulo-sm);
-  color: var(--cor-roxo-900);
+  font-family: var(--font-heading);
+  font-size: var(--heading-md);
+  font-weight: 700;
+  font-stretch: 78%;
+  line-height: 1.05;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.paginador__link:hover .paginador__titulo {
+  color: var(--color-accent);
 }
 
 @media (min-width: 48rem) {
   .paginador {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .paginador > span:empty {
-    display: block;
+    column-gap: var(--column-gap);
   }
 
   .paginador__link--proxima {

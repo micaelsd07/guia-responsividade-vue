@@ -1,298 +1,249 @@
 <script setup>
-import PaginaSecao from '@/components/guia/PaginaSecao.vue'
-import BlocoSecao from '@/components/guia/BlocoSecao.vue'
-import CodigoExemplo from '@/components/guia/CodigoExemplo.vue'
+import { ref } from 'vue'
+import AberturaSecao from '@/components/guia/AberturaSecao.vue'
+import CapituloGuia from '@/components/guia/CapituloGuia.vue'
+import CodigoComparado from '@/components/guia/CodigoComparado.vue'
 import PerguntaGuia from '@/components/guia/PerguntaGuia.vue'
 import FontesConsultadas from '@/components/guia/FontesConsultadas.vue'
-import MolduraLab from '@/components/guia/MolduraLab.vue'
+import PaginadorSecoes from '@/components/guia/PaginadorSecoes.vue'
+import FiguraEditorial from '@/components/guia/FiguraEditorial.vue'
+import ArvorePastas from '@/components/demos/ArvorePastas.vue'
+import TokensVivos from '@/components/demos/TokensVivos.vue'
+import VitaisWeb from '@/components/demos/VitaisWeb.vue'
 import LabBugDaLista from '@/components/labs/LabBugDaLista.vue'
-import {
-  exemploEstruturaPastas,
-  exemploComponenteVue,
-  exemploListaComKey,
-  exemploRotasLazy,
-  exemploTokensCss,
-} from '@/data/exemplos'
+import { fotos } from '@/data/fotos'
+import { fontes } from '@/data/fontes'
+import * as ex from '@/data/exemplos'
+import { usePageMotion } from '@/composables/useMotion'
 
-const vitais = [
-  {
-    sigla: 'LCP',
-    nome: 'Largest Contentful Paint',
-    mede: 'Carregamento: quanto tempo até o maior elemento visível (foto de capa, título) aparecer.',
-    meta: 'até 2,5 s',
-  },
-  {
-    sigla: 'INP',
-    nome: 'Interaction to Next Paint',
-    mede: 'Interatividade: quanto a página demora para responder a um clique, toque ou tecla.',
-    meta: 'até 200 ms',
-  },
-  {
-    sigla: 'CLS',
-    nome: 'Cumulative Layout Shift',
-    mede: 'Estabilidade visual: quanto o conteúdo pula enquanto a página carrega.',
-    meta: 'até 0,1',
-  },
-]
-
-const fontes = [
-  {
-    titulo: 'Style Guide',
-    autor: 'Vue.js (documentação oficial)',
-    url: 'https://vuejs.org/style-guide/',
-  },
-  {
-    titulo: 'List Rendering: Maintaining State with key',
-    autor: 'Vue.js (documentação oficial)',
-    url: 'https://vuejs.org/guide/essentials/list.html#maintaining-state-with-key',
-  },
-  {
-    titulo: 'Props e Component Events',
-    autor: 'Vue.js (documentação oficial)',
-    url: 'https://vuejs.org/guide/components/props.html',
-  },
-  {
-    titulo: 'Lazy Loading Routes',
-    autor: 'Vue Router (documentação oficial)',
-    url: 'https://router.vuejs.org/guide/advanced/lazy-loading.html',
-  },
-  {
-    titulo: 'Web Vitals',
-    autor: 'web.dev (Google)',
-    url: 'https://web.dev/articles/vitals',
-  },
-  {
-    titulo: 'Using CSS custom properties (variables)',
-    autor: 'MDN Web Docs',
-    url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties',
-  },
-]
+const raiz = ref(null)
+usePageMotion(raiz)
 </script>
 
 <template>
-  <PaginaSecao
-    nome="boas-praticas"
-    resumo="Responsividade também é organização. Um projeto Vue bem estruturado é mais fácil de manter, carrega mais rápido e fica livre de bugs estranhos, como o texto que muda de dono numa lista."
-  >
-    <BlocoSecao id="explicacao" rotulo="Explicação" titulo="Hábitos que deixam o projeto saudável">
-      <div class="praticas">
-        <section class="pratica">
-          <h3>Estrutura de pastas</h3>
-          <p>
-            Separe por responsabilidade: componentes de layout, peças reutilizáveis e páginas
-            (views). Esta é a estrutura deste próprio guia:
-          </p>
-          <CodigoExemplo arquivo="estrutura do projeto" linguagem="texto" :codigo="exemploEstruturaPastas" />
-        </section>
+  <div ref="raiz">
+    <AberturaSecao nome="boas-praticas" />
 
-        <section class="pratica">
-          <h3>Nomes de componentes</h3>
-          <ul>
-            <li><strong>PascalCase</strong> e com mais de uma palavra: <code>CartaoAnimal.vue</code>, nunca <code>Cartao.vue</code> (evita conflito com tags HTML).</li>
-            <li>Prefixo <code>The</code> para componentes únicos: <code>TheHeader</code>.</li>
-            <li>Sufixo <code>View</code> para páginas ligadas a rotas: <code>BoasPraticasView</code>.</li>
-          </ul>
-        </section>
-
-        <section class="pratica">
-          <h3>Props tipadas e eventos</h3>
-          <p>
-            Declare as props com tipo e obrigatoriedade em <code>defineProps</code>: o Vue avisa
-            no console se alguém passar o dado errado. Os dados <strong>descem</strong> por props e
-            os avisos <strong>sobem</strong> por eventos (<code>defineEmits</code>); o filho nunca
-            altera a prop diretamente.
-          </p>
-        </section>
-
-        <section class="pratica">
-          <h3><code>:key</code> no <code>v-for</code></h3>
-          <p>
-            Toda lista renderizada com <code>v-for</code> precisa de uma <code>:key</code> única e
-            estável, normalmente o <code>id</code> do item. Evite o índice do array: ele muda
-            quando a lista muda. O Laboratório 03, logo abaixo, mostra o porquê.
-          </p>
-        </section>
-
-        <section class="pratica">
-          <h3>Variáveis CSS como design tokens</h3>
-          <p>
-            Cores, espaçamentos e raios ficam em variáveis no <code>:root</code>. Os componentes
-            usam <code>var(--token)</code> em vez de valores soltos, e mudar o visual do site inteiro
-            vira uma alteração em um só arquivo.
-          </p>
-        </section>
-
-        <section class="pratica">
-          <h3>Rotas sob demanda</h3>
-          <p>
-            Com <code>component: () =&gt; import(...)</code>, cada página vira um arquivo separado
-            no build e só é baixada quando alguém a visita. A primeira tela carrega mais rápido, o
-            que ajuda diretamente o LCP.
-          </p>
-        </section>
+    <CapituloGuia id="pastas" indice="05.1" titulo="Estrutura de pastas">
+      <div class="prose" data-reveal>
+        <p>
+          Uma boa estrutura responde rápido à pergunta "onde eu mexo?". Separe por <strong>responsabilidade</strong>:
+          o que é página (views), o que é peça reutilizável (components), o que é lógica compartilhada (composables) e o
+          que é conteúdo (data).
+        </p>
       </div>
+      <FiguraEditorial
+        :foto="fotos.codigoMonitor"
+        numero="05.1"
+        legenda="Código em vários monitores. Em projetos grandes, a organização das pastas decide quanto tempo se perde procurando arquivos."
+        proporcao="21 / 9"
+        sizes="(min-width: 80rem) 55vw, 100vw"
+      />
+      <ArvorePastas />
+    </CapituloGuia>
 
-      <div class="vitais">
-        <h3 class="vitais__titulo">Core Web Vitals: as três notas do Google</h3>
-        <ul class="vitais__lista">
-          <li v-for="vital in vitais" :key="vital.sigla" class="vital">
-            <p class="vital__sigla">{{ vital.sigla }}</p>
-            <p class="vital__nome">{{ vital.nome }}</p>
-            <p class="vital__mede">{{ vital.mede }}</p>
-            <p class="vital__meta">Bom: {{ vital.meta }}</p>
-          </li>
-        </ul>
+    <CapituloGuia id="componentes" indice="05.2" titulo="Componentes e nomes">
+      <div class="prose" data-reveal>
+        <p>
+          Componentes em <strong>PascalCase</strong> e com <strong>mais de uma palavra</strong> evitam conflito com
+          elementos HTML atuais e futuros. Prefixos ajudam a ler a árvore: <code>The</code> para peças únicas,
+          <code>View</code> para páginas, e um prefixo comum para famílias (<code>Lab…</code>, <code>Campo…</code>).
+        </p>
       </div>
-    </BlocoSecao>
+      <CodigoComparado
+        :ruim="{ arquivo: 'card.vue', linguagem: 'vue', codigo: ex.componenteRuim }"
+        :bom="{ arquivo: 'CartaoAnimal.vue', linguagem: 'vue', codigo: ex.componenteBom }"
+        explicacao="O nome é a primeira documentação do componente. card não diz o que é e pode colidir com um elemento nativo; CartaoAnimal diz."
+      />
+    </CapituloGuia>
 
-    <BlocoSecao id="codigo" rotulo="Exemplo de código" titulo="Componente, lista, tokens e rotas">
-      <CodigoExemplo arquivo="components/CartaoAnimal.vue" linguagem="vue" :codigo="exemploComponenteVue" />
-      <CodigoExemplo arquivo="components/ListaAnimais.vue" linguagem="vue" :codigo="exemploListaComKey" />
-      <CodigoExemplo arquivo="assets/styles/main.css" linguagem="css" :codigo="exemploTokensCss" />
-      <CodigoExemplo arquivo="router/index.js" linguagem="js" :codigo="exemploRotasLazy" />
-    </BlocoSecao>
+    <CapituloGuia id="props" indice="05.3" titulo="Props tipadas e eventos">
+      <div class="prose" data-reveal>
+        <p>
+          Os dados <strong>descem</strong> por props e os avisos <strong>sobem</strong> por eventos. Declarar o tipo e
+          a obrigatoriedade faz o Vue avisar no console quando alguém passa o dado errado. Um filho nunca altera uma
+          prop: ele emite um evento e o dono do dado decide.
+        </p>
+      </div>
+      <CodigoComparado
+        :ruim="{ arquivo: 'CartaoAnimal.vue', linguagem: 'vue', codigo: ex.propsRuim }"
+        :bom="{ arquivo: 'CartaoAnimal.vue', linguagem: 'vue', codigo: ex.propsBom }"
+        explicacao="Alterar a prop cria um fluxo de dados escondido, difícil de depurar. Com defineEmits, toda mudança passa por um lugar visível."
+      />
+    </CapituloGuia>
 
-    <MolduraLab
-      numero="3"
-      titulo="O bug da lista"
-      descricao="Duas listas idênticas de animais, cada um com um campo de texto. A Lista A usa v-for sem :key; a Lista B usa :key=&quot;animal.id&quot;. Siga os passos e veja o estado do DOM ir parar no animal errado."
-    >
+    <CapituloGuia id="key" indice="05.4" titulo=":key no v-for" largo>
+      <template #aside>
+        <p>O Vue usa a :key para saber qual elemento do DOM pertence a qual item. Sem ela, só sobram as posições.</p>
+      </template>
+      <CodigoComparado
+        :ruim="{ arquivo: 'ListaAnimais.vue', linguagem: 'vue', codigo: ex.keyRuim }"
+        :bom="{ arquivo: 'ListaAnimais.vue', linguagem: 'vue', codigo: ex.keyBom }"
+        explicacao="O índice muda quando a lista muda (remover o primeiro item muda o índice de todos). O id é a identidade do item."
+      />
       <LabBugDaLista />
-    </MolduraLab>
+    </CapituloGuia>
+
+    <CapituloGuia id="tokens" indice="05.5" titulo="Variáveis CSS como design tokens">
+      <div class="prose" data-reveal>
+        <p>
+          <strong>Design tokens</strong> são as decisões de design com nome: cores, espaçamentos, tipografia, raios,
+          sombras. Guardados como variáveis CSS no <code>:root</code>, viram uma fonte única: mudou o token, mudou o
+          site inteiro, sem caçar valores soltos.
+        </p>
+      </div>
+      <TokensVivos />
+      <CodigoComparado
+        :ruim="{ arquivo: 'botao.css', linguagem: 'css', codigo: ex.tokensRuim }"
+        :bom="{ arquivo: 'main.css', linguagem: 'css', codigo: ex.tokensBom }"
+        explicacao="Valores repetidos à mão se desencontram com o tempo (#42239a vs #4323a0). Com tokens, a consistência é garantida pelo código."
+      />
+    </CapituloGuia>
+
+    <CapituloGuia id="vitals" indice="05.6" titulo="Core Web Vitals" largo>
+      <template #aside>
+        <p>As três métricas que o Google usa para medir a experiência real das pessoas, com os limites oficiais do web.dev.</p>
+      </template>
+      <VitaisWeb />
+    </CapituloGuia>
+
+    <CapituloGuia id="rotas" indice="05.7" titulo="Rotas sob demanda">
+      <div class="prose" data-reveal>
+        <p>
+          Com <code>component: () =&gt; import(...)</code>, cada página vira um arquivo JavaScript separado no build
+          e só é baixada quando alguém visita a rota. A primeira tela carrega menos código, o que ajuda o LCP e o INP.
+          Este guia faz isso em todas as rotas.
+        </p>
+      </div>
+      <CodigoComparado
+        :ruim="{ arquivo: 'router/index.js', linguagem: 'js', codigo: ex.rotasRuim }"
+        :bom="{ arquivo: 'router/index.js', linguagem: 'js', codigo: ex.rotasBom }"
+        explicacao="Com import estático, quem abre só a capa baixa o código de todas as páginas. Com import dinâmico, cada um baixa o que vai usar."
+      />
+    </CapituloGuia>
 
     <PerguntaGuia
-      numero="5"
+      id="pergunta-5"
+      numero="05"
       pergunta="Uma lista de animais é exibida com v-for, sem :key, e cada item tem um campo de texto. A pessoa digita algo no campo do segundo animal, e em seguida o primeiro animal é removido da lista. O que pode acontecer com o texto digitado, e por quê?"
     >
       <p>
-        Por desempenho, o Vue <strong>tenta reaproveitar os elementos do DOM</strong> que já
-        existem. Sem <code>:key</code>, ele não sabe qual elemento pertence a qual animal: só
-        enxerga posições. Então, em vez de remover o elemento certo, ele aplica a estratégia de
-        "corrigir no lugar".
+        Por desempenho, o Vue <strong>tenta reaproveitar os elementos do DOM</strong> que já existem. Sem
+        <code>:key</code>, ele não sabe qual elemento pertence a qual animal: só enxerga posições, e aplica a
+        estratégia de "corrigir no lugar".
       </p>
       <p>
-        Ao remover o 1º animal, a lista passa de <em>Capivara, Tamanduá, Arara-azul,
-        Lobo-guará</em> para <em>Tamanduá, Arara-azul, Lobo-guará</em>. O Vue então
-        <strong>atualiza apenas o texto dos nós existentes</strong>: escreve "Tamanduá" no 1º
-        item, "Arara-azul" no 2º, "Lobo-guará" no 3º, e apaga o último item.
+        Ao remover o 1º animal, a lista passa de <em>Capivara, Tamanduá, Arara-azul…</em> para <em>Tamanduá,
+        Arara-azul…</em>. O Vue então <strong>atualiza apenas o texto dos nós existentes</strong>: escreve
+        "Tamanduá" no 1º item, "Arara-azul" no 2º e assim por diante, e apaga o último item.
       </p>
       <p>
-        Os campos de texto não são tocados, porque o que foi digitado não faz parte do estado
-        reativo: é <strong>estado local do DOM</strong>, guardado no próprio
-        <code>&lt;input&gt;</code>. Por isso o texto digitado para o Tamanduá
-        <strong>fica no 2º item, que agora mostra a Arara-azul</strong>, e o Tamanduá aparece
-        com o campo vazio. O texto vai parar no animal errado.
+        O campo de texto não é tocado, porque o que foi digitado é <strong>estado local do DOM</strong>, guardado no
+        próprio <code>&lt;input&gt;</code>, e não faz parte do estado reativo. Por isso o texto digitado para o
+        Tamanduá <strong>fica no 2º item, que agora mostra a Arara-azul</strong>, e o Tamanduá aparece com o campo
+        vazio. O texto vai parar no animal errado.
       </p>
       <p>
-        Com <code>:key="animal.id"</code>, cada elemento fica amarrado a um animal. O Vue percebe
-        que quem saiu foi a Capivara, remove exatamente aquele elemento e mantém o do Tamanduá
-        intacto, com o texto dentro.
+        Com <code>:key="animal.id"</code>, cada elemento fica amarrado a um animal. O Vue percebe que quem saiu foi a
+        Capivara, remove exatamente aquele elemento e mantém o do Tamanduá intacto, com o texto dentro.
       </p>
+      <template #visual>
+        <figure class="trocas" data-assemble>
+          <figcaption class="label trocas__titulo">Sem :key, por posição</figcaption>
+          <div class="trocas__colunas">
+            <ol class="trocas__lista">
+              <li data-piece><span>1</span>Capivara</li>
+              <li data-piece class="is-texto"><span>2</span>Tamanduá <em>"Tatá"</em></li>
+              <li data-piece><span>3</span>Arara-azul</li>
+            </ol>
+            <span class="trocas__seta" aria-hidden="true">→</span>
+            <ol class="trocas__lista">
+              <li data-piece><span>1</span>Tamanduá</li>
+              <li data-piece class="is-erro"><span>2</span>Arara-azul <em>"Tatá"</em></li>
+              <li data-piece class="is-sumiu"><span>3</span>removido</li>
+            </ol>
+          </div>
+          <p class="trocas__nota" data-piece>O &lt;li&gt; nº 2 nunca saiu do lugar. Só o nome dentro dele mudou.</p>
+        </figure>
+      </template>
     </PerguntaGuia>
 
-    <FontesConsultadas :fontes="fontes" />
-  </PaginaSecao>
+    <FontesConsultadas numero="05" :fontes="fontes['boas-praticas']" />
+    <PaginadorSecoes nome="boas-praticas" />
+  </div>
 </template>
 
 <style scoped>
-.praticas {
+.trocas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
-  gap: var(--espaco-4);
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: var(--hairline) solid var(--color-dark-line);
 }
 
-.pratica {
+.trocas__titulo {
+  color: var(--color-signal);
+}
+
+.trocas__colunas {
   display: grid;
-  align-content: start;
-  gap: var(--espaco-3);
-  min-width: 0;
-  padding: var(--espaco-5) var(--espaco-4);
-  border: var(--borda);
-  border-radius: var(--raio-md);
-  background: var(--cor-superficie);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.pratica:first-child {
-  grid-column: 1 / -1;
-}
-
-.pratica h3 {
-  font-size: var(--titulo-sm);
-}
-
-.pratica ul {
+.trocas__lista {
   display: grid;
-  gap: var(--espaco-2);
-  margin: 0;
-  padding-left: var(--espaco-5);
-}
-
-.pratica p,
-.pratica li {
-  color: var(--cor-tinta-suave);
-}
-
-.vitais {
-  display: grid;
-  gap: var(--espaco-4);
-}
-
-.vitais__titulo {
-  font-size: var(--titulo-md);
-}
-
-.vitais__lista {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
-  gap: var(--espaco-3);
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
+  font-size: var(--text-sm);
 }
 
-.vital {
-  display: grid;
-  align-content: start;
-  gap: var(--espaco-2);
-  padding: var(--espaco-5) var(--espaco-4);
-  border-radius: var(--raio-md);
-  background: var(--cor-roxo-800);
-  color: var(--cor-roxo-100);
+.trocas__lista li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-dark-2);
+  color: var(--color-on-dark);
 }
 
-.vital__sigla {
-  font-family: var(--fonte-titulo);
-  font-size: var(--titulo-lg);
-  font-weight: 700;
-  line-height: 1;
-  color: #fff;
+.trocas__lista span {
+  font-family: var(--font-mono);
+  color: var(--color-on-dark-2);
 }
 
-.vital__nome {
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
-  color: var(--cor-roxo-200);
+.trocas__lista em {
+  color: var(--color-signal);
+  font-style: normal;
 }
 
-.vital__mede {
-  font-size: var(--texto-sm);
+.trocas__lista .is-erro {
+  background: #ff8a70;
+  color: var(--color-ink);
 }
 
-.vital__meta {
-  justify-self: start;
-  margin-top: var(--espaco-2);
-  padding: var(--espaco-1) var(--espaco-3);
-  border-radius: 2rem;
-  background: var(--cor-ambar);
-  color: var(--cor-roxo-950);
-  font-size: var(--texto-sm);
-  font-weight: 600;
+.trocas__lista .is-erro em,
+.trocas__lista .is-erro span {
+  color: var(--color-ink);
 }
 
-@media (min-width: 64rem) {
-  .pratica:first-child {
-    grid-column: auto;
-    grid-row: span 3;
-  }
+.trocas__lista .is-sumiu {
+  border: var(--hairline) dashed var(--color-on-dark-2);
+  background: transparent;
+  color: var(--color-on-dark-2);
+  text-decoration: line-through;
+}
+
+.trocas__seta {
+  font-family: var(--font-mono);
+  color: var(--color-signal);
+}
+
+.trocas__nota {
+  font-size: var(--text-sm);
+  color: var(--color-on-dark-2);
 }
 </style>

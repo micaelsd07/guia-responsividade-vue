@@ -1,222 +1,315 @@
 <script setup>
-import PaginaSecao from '@/components/guia/PaginaSecao.vue'
-import BlocoSecao from '@/components/guia/BlocoSecao.vue'
-import CodigoExemplo from '@/components/guia/CodigoExemplo.vue'
+import { ref } from 'vue'
+import AberturaSecao from '@/components/guia/AberturaSecao.vue'
+import CapituloGuia from '@/components/guia/CapituloGuia.vue'
+import CodigoEditor from '@/components/guia/CodigoEditor.vue'
 import PerguntaGuia from '@/components/guia/PerguntaGuia.vue'
 import FontesConsultadas from '@/components/guia/FontesConsultadas.vue'
-import { exemploImagensHtml, exemploImagensCss } from '@/data/exemplos'
+import PaginadorSecoes from '@/components/guia/PaginadorSecoes.vue'
+import FiguraEditorial from '@/components/guia/FiguraEditorial.vue'
+import LabImagens from '@/components/labs/LabImagens.vue'
+import LabCls from '@/components/labs/LabCls.vue'
+import { fotos } from '@/data/fotos'
+import { fontes } from '@/data/fontes'
+import { imagensHtml, imagensCss } from '@/data/exemplos'
+import { usePageMotion } from '@/composables/useMotion'
+
+const raiz = ref(null)
+usePageMotion(raiz)
 
 const ferramentas = [
   {
-    nome: 'max-width: 100%; height: auto',
-    texto: 'A imagem nunca fica maior que o contêiner e mantém a proporção ao encolher. É o que impede a foto de causar rolagem horizontal no celular.',
+    codigo: 'max-width: 100%; height: auto;',
+    titulo: 'Nunca maior que o contêiner',
+    texto: 'A imagem encolhe com a coluna e mantém a proporção. É o que impede uma foto de 1600px de criar rolagem horizontal no celular.',
   },
   {
-    nome: 'width e height no HTML',
-    texto: 'Informam a proporção da imagem antes do download. O navegador reserva o espaço certo e o texto não pula. Com o CSS acima, a imagem continua fluida.',
+    codigo: 'width="1600" height="1067"',
+    titulo: 'Dimensões no HTML',
+    texto: 'Informam a proporção antes do download, e o navegador reserva o espaço certo. Com o CSS acima, a imagem continua fluida.',
   },
   {
-    nome: 'loading="lazy"',
-    texto: 'Adia o download de imagens que estão fora da tela. Não use na imagem principal do topo: ela costuma ser o elemento de LCP, e atrasá-la piora o carregamento.',
+    codigo: 'loading="lazy"',
+    titulo: 'Baixar só quando precisar',
+    texto: 'Adia imagens fora da tela. Não use na imagem principal do topo: ela costuma ser o LCP, e atrasá-la piora o carregamento.',
   },
   {
-    nome: 'aspect-ratio',
-    texto: 'Define a proporção de uma caixa (16 / 9, 4 / 3, 1). Útil para cards, vídeos e espaços reservados.',
+    codigo: 'aspect-ratio: 16 / 9;',
+    titulo: 'Caixa com proporção',
+    texto: 'Define a proporção de um elemento mesmo sem conteúdo. Útil para cards, vídeos incorporados e espaços reservados.',
   },
   {
-    nome: 'object-fit',
-    texto: 'Diz como a imagem preenche uma caixa de proporção diferente: cover corta as sobras, contain mostra tudo com faixas, fill distorce.',
+    codigo: 'object-fit: cover;',
+    titulo: 'Como a foto ocupa a caixa',
+    texto: 'cover corta as sobras, contain mostra tudo com faixas, fill distorce. object-position escolhe o lado que fica.',
   },
   {
-    nome: 'srcset e sizes',
-    texto: 'Oferecem várias versões do mesmo arquivo. O navegador baixa a menor que atende à largura da tela e à densidade de pixels do aparelho.',
-  },
-]
-
-const ajustes = ['fill', 'contain', 'cover']
-
-const fontes = [
-  {
-    titulo: 'Responsive images',
-    autor: 'MDN Web Docs',
-    url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Guides/Responsive_images',
-  },
-  {
-    titulo: 'Cumulative Layout Shift (CLS)',
-    autor: 'web.dev (Google)',
-    url: 'https://web.dev/articles/cls',
-  },
-  {
-    titulo: 'Optimize Cumulative Layout Shift',
-    autor: 'web.dev (Google)',
-    url: 'https://web.dev/articles/optimize-cls',
-  },
-  {
-    titulo: 'Browser-level image lazy loading for the web',
-    autor: 'web.dev (Google)',
-    url: 'https://web.dev/articles/browser-level-image-lazy-loading',
-  },
-  {
-    titulo: 'aspect-ratio',
-    autor: 'MDN Web Docs',
-    url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/aspect-ratio',
-  },
-  {
-    titulo: 'object-fit',
-    autor: 'MDN Web Docs',
-    url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit',
+    codigo: 'srcset · sizes',
+    titulo: 'O arquivo certo para cada tela',
+    texto: 'Várias larguras do mesmo arquivo. O navegador escolhe a menor que atende à largura exibida e à densidade de pixels.',
   },
 ]
 </script>
 
 <template>
-  <PaginaSecao
-    nome="imagens"
-    resumo="Imagens costumam ser os arquivos mais pesados da página e as maiores culpadas por layouts que pulam. Seis ferramentas resolvem quase todos os casos."
-  >
-    <BlocoSecao id="explicacao" rotulo="Explicação" titulo="Fluidas, leves e estáveis">
+  <div ref="raiz">
+    <AberturaSecao nome="imagens" />
+
+    <CapituloGuia id="peso" indice="04.1" titulo="O peso das imagens">
+      <div class="prose" data-reveal>
+        <p>
+          Em muitas páginas, as imagens somam a maior parte dos bytes baixados. Em um layout responsivo, elas têm três
+          tarefas: <strong>caber</strong> em qualquer coluna, <strong>não pesar</strong> mais do que a tela precisa e
+          <strong>não empurrar</strong> o conteúdo quando terminam de carregar.
+        </p>
+        <p>
+          As fotos deste guia seguem as três: cada uma existe em 480, 960 e 1600px de largura (WebP), leva
+          <code>width</code> e <code>height</code> e só é baixada perto da hora de aparecer.
+        </p>
+      </div>
+      <FiguraEditorial
+        :foto="fotos.notebookCelular"
+        numero="04.1"
+        legenda="Notebook e celular sobre a mesma mesa. A mesma foto precisa de um arquivo de ~1600px no notebook e de ~480px no celular."
+        proporcao="16 / 9"
+        sizes="(min-width: 80rem) 55vw, 100vw"
+        parallax
+      />
+    </CapituloGuia>
+
+    <CapituloGuia id="ferramentas" indice="04.2" titulo="Seis ferramentas">
       <ol class="ferramentas">
-        <li v-for="ferramenta in ferramentas" :key="ferramenta.nome" class="ferramenta">
-          <h3><code>{{ ferramenta.nome }}</code></h3>
-          <p>{{ ferramenta.texto }}</p>
+        <li v-for="(item, i) in ferramentas" :key="item.codigo" class="ferramenta" data-reveal>
+          <span class="ferramenta__n">{{ String(i + 1).padStart(2, '0') }}</span>
+          <div class="ferramenta__corpo">
+            <code class="ferramenta__codigo">{{ item.codigo }}</code>
+            <h3 class="ferramenta__titulo">{{ item.titulo }}</h3>
+            <p>{{ item.texto }}</p>
+          </div>
         </li>
       </ol>
+      <CodigoEditor arquivo="galeria.html" linguagem="html" :codigo="imagensHtml" :destaque="[1, 6, 7]" data-reveal />
+      <CodigoEditor arquivo="imagens.css" linguagem="css" :codigo="imagensCss" data-reveal />
+    </CapituloGuia>
 
-      <figure class="ajustes">
-        <figcaption class="ajustes__legenda">
-          A mesma imagem 1200 × 600 (proporção 2:1) dentro de caixas quadradas, com
-          <code>aspect-ratio: 1</code>, mudando apenas o <code>object-fit</code>:
-        </figcaption>
-        <div class="ajustes__lista">
-          <div v-for="ajuste in ajustes" :key="ajuste" class="ajuste">
-            <img
-              src="/img/paisagem.svg"
-              width="1200"
-              height="600"
-              alt="Paisagem ilustrada com montanhas roxas e sol amarelo"
-              loading="lazy"
-              :style="{ objectFit: ajuste }"
-            />
-            <p><code>object-fit: {{ ajuste }}</code></p>
-          </div>
-        </div>
-      </figure>
-    </BlocoSecao>
+    <CapituloGuia id="lab-05-capitulo" indice="04.3" titulo="Deformada, cortada, adaptada, responsiva" largo>
+      <LabImagens />
+    </CapituloGuia>
 
-    <BlocoSecao id="codigo" rotulo="Exemplo de código" titulo="Uma imagem bem declarada">
-      <CodigoExemplo arquivo="galeria.html" linguagem="html" :codigo="exemploImagensHtml" />
-      <CodigoExemplo arquivo="imagens.css" linguagem="css" :codigo="exemploImagensCss" />
-    </BlocoSecao>
+    <CapituloGuia id="lab-06-capitulo" indice="04.4" titulo="Quando a foto empurra o texto" largo>
+      <template #aside>
+        <p>O laboratório usa o comportamento real do navegador: nenhuma das três versões tem altura fixa no CSS.</p>
+      </template>
+      <LabCls />
+    </CapituloGuia>
 
     <PerguntaGuia
-      numero="4"
+      id="pergunta-4"
+      numero="04"
       pergunta="Ao abrir uma página, o texto aparece primeiro. Quando a imagem termina de carregar, ela empurra o texto para baixo. Por que isso acontece quando a imagem não tem width e height no HTML? Qual métrica do Google mede esse problema?"
     >
       <p>
-        O HTML chega antes da imagem. Sem <code>width</code> e <code>height</code>, o navegador
-        não tem como saber o tamanho dela, então <strong>não reserva o espaço da imagem antes de
-        ela carregar</strong>: desenha a tag com altura zero e posiciona o texto logo abaixo.
+        O HTML chega antes da imagem. Sem <code>width</code> e <code>height</code>, o navegador não tem como saber o
+        tamanho dela, então <strong>não reserva o espaço da imagem antes de ela carregar</strong>: a imagem ocupa 0px
+        de altura e o texto é desenhado logo abaixo.
       </p>
       <p>
-        Quando o download termina, o navegador finalmente descobre as dimensões, abre o espaço
-        e a imagem <strong>"empurra" o texto para baixo</strong>. Se a pessoa estava lendo ou
-        prestes a tocar num botão, ela perde o lugar ou clica no lugar errado.
+        Quando o download termina, o navegador descobre as dimensões, abre o espaço e a imagem
+        <strong>empurra o texto para baixo</strong>. Se a pessoa estava lendo ou prestes a tocar num botão, perde o
+        lugar ou toca no lugar errado.
       </p>
       <p>
-        Com <code>width="800" height="533"</code> no HTML, o navegador calcula a proporção (3:2)
-        antes do download e já reserva a área certa, mesmo com <code>max-width: 100%</code> e
-        <code>height: auto</code> deixando a imagem fluida.
+        Com <code>width</code> e <code>height</code> no HTML, o navegador calcula a proporção antes do download e já
+        reserva a área certa, mesmo com <code>max-width: 100%</code> e <code>height: auto</code> mantendo a imagem
+        fluida. <code>aspect-ratio</code> no CSS tem o mesmo efeito.
       </p>
       <p>
-        A métrica do Core Web Vitals que mede essa instabilidade visual é o
-        <strong>CLS (Cumulative Layout Shift)</strong>. Um bom resultado é CLS de até 0,1.
+        A métrica do Core Web Vitals que mede essa instabilidade é o <strong>CLS (Cumulative Layout Shift)</strong>.
+        Ela multiplica a fração da tela afetada pela distância percorrida. Um bom resultado é <strong>até 0,1</strong>.
       </p>
+      <template #visual>
+        <figure class="cls" data-assemble>
+          <figcaption class="label cls__titulo">CLS em dois quadros</figcaption>
+          <div class="cls__quadros">
+            <div class="cls__quadro" data-piece>
+              <span class="label">0,2 s · texto</span>
+              <span class="cls__linha cls__linha--titulo"></span>
+              <span class="cls__vazio">imagem: 0px</span>
+              <span class="cls__texto"></span>
+              <span class="cls__texto cls__texto--curto"></span>
+            </div>
+            <div class="cls__quadro" data-piece>
+              <span class="label">1,5 s · foto chega</span>
+              <span class="cls__linha cls__linha--titulo"></span>
+              <span class="cls__foto"></span>
+              <span class="cls__texto cls__texto--movido"></span>
+              <span class="cls__texto cls__texto--curto cls__texto--movido"></span>
+            </div>
+          </div>
+          <p class="cls__formula" data-piece>
+            CLS = <span>fração de impacto</span> × <span>fração de distância</span>
+          </p>
+          <ol class="cls__faixas" data-piece>
+            <li class="cls__faixa--bom"><strong>≤ 0,1</strong> bom</li>
+            <li class="cls__faixa--medio"><strong>≤ 0,25</strong> precisa melhorar</li>
+            <li class="cls__faixa--ruim"><strong>&gt; 0,25</strong> ruim</li>
+          </ol>
+        </figure>
+      </template>
     </PerguntaGuia>
 
-    <FontesConsultadas :fontes="fontes" />
-  </PaginaSecao>
+    <FontesConsultadas numero="04" :fontes="fontes.imagens" />
+    <PaginadorSecoes nome="imagens" />
+  </div>
 </template>
 
 <style scoped>
 .ferramentas {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
-  gap: var(--espaco-3);
   margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: ferramenta;
+  border-top: var(--border-strong);
 }
 
 .ferramenta {
   display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: var(--border-soft);
+}
+
+.ferramenta__n {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-stretch: 75%;
+  color: var(--color-accent);
+}
+
+.ferramenta__corpo {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-ink-2);
+}
+
+.ferramenta__codigo {
+  justify-self: start;
+  font-size: var(--text-xs);
+}
+
+.ferramenta__titulo {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  font-stretch: 82%;
+  color: var(--color-ink);
+}
+
+.cls {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: var(--hairline) solid var(--color-dark-line);
+}
+
+.cls__titulo {
+  color: var(--color-signal);
+}
+
+.cls__quadros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.cls__quadro {
+  display: grid;
   align-content: start;
-  gap: var(--espaco-2);
-  padding: var(--espaco-4);
-  border: var(--borda);
-  border-radius: var(--raio-md);
-  background: var(--cor-superficie);
-  counter-increment: ferramenta;
+  gap: 0.5rem;
+  height: 14rem;
+  padding: var(--space-3);
+  border: 0.375rem solid var(--color-dark-3);
+  border-radius: 0.75rem;
+  background: var(--color-dark-2);
+  overflow: hidden;
 }
 
-.ferramenta::before {
-  content: counter(ferramenta, decimal-leading-zero);
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
-  color: var(--cor-roxo-400);
+.cls__quadro .label {
+  color: var(--color-on-dark-2);
+  font-size: var(--text-2xs);
 }
 
-.ferramenta h3 {
-  font-size: var(--texto-base);
+.cls__linha--titulo {
+  height: 0.875rem;
+  width: 80%;
+  background: var(--color-on-dark);
 }
 
-.ferramenta p {
-  font-size: var(--texto-sm);
-  color: var(--cor-tinta-suave);
+.cls__vazio {
+  padding: 0.125rem 0.375rem;
+  border: var(--hairline) dashed #ff8a70;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: #ff8a70;
 }
 
-.ajustes {
+.cls__foto {
+  height: 5rem;
+  background: var(--color-accent);
+}
+
+.cls__texto {
+  height: 0.5rem;
+  background: var(--color-on-dark-2);
+}
+
+.cls__texto--curto {
+  width: 60%;
+}
+
+.cls__texto--movido {
+  background: #ff8a70;
+}
+
+.cls__formula {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-on-dark);
+}
+
+.cls__formula span {
+  color: var(--color-signal);
+}
+
+.cls__faixas {
   display: grid;
-  gap: var(--espaco-4);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hairline);
   margin: 0;
-  padding: var(--espaco-5) var(--espaco-4);
-  border-radius: var(--raio-lg);
-  background: var(--cor-roxo-100);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
 }
 
-.ajustes__legenda {
-  font-size: var(--texto-sm);
-  color: var(--cor-tinta-suave);
-}
-
-.ajustes__lista {
+.cls__faixas li {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
-  gap: var(--espaco-4);
+  padding: var(--space-2);
+  color: var(--color-ink);
 }
 
-.ajuste {
-  display: grid;
-  gap: var(--espaco-2);
-  min-width: 0;
+.cls__faixas strong {
+  font-family: var(--font-mono);
 }
 
-.ajuste img {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: var(--raio-md);
-  background: repeating-conic-gradient(var(--cor-roxo-50) 0 25%, var(--cor-superficie) 0 50%) 0 0 / 1rem 1rem;
-  border: var(--espessura) solid var(--cor-linha-forte);
+.cls__faixa--bom {
+  background: #7fd8a6;
 }
 
-.ajuste p {
-  font-size: var(--texto-sm);
-  text-align: center;
+.cls__faixa--medio {
+  background: #f5c76c;
 }
 
-@media (min-width: 48rem) {
-  .ajustes {
-    padding: var(--espaco-6);
-  }
+.cls__faixa--ruim {
+  background: #ff8a70;
 }
 </style>

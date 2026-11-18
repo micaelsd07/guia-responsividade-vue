@@ -1,191 +1,194 @@
 <script setup>
-import { reactive } from 'vue'
+import { ref, computed, nextTick } from 'vue'
+import BancadaLab from '@/components/guia/BancadaLab.vue'
+import CodigoEditor from '@/components/guia/CodigoEditor.vue'
+import CampoSegmentado from '@/components/controles/CampoSegmentado.vue'
+import { gsap, movimentoReduzido } from '@/composables/useMotion'
 
 const animaisIniciais = [
-  { id: 1, nome: 'Capivara', cor: '#8d6cf0' },
-  { id: 2, nome: 'Tamanduá', cor: '#f0b545' },
-  { id: 3, nome: 'Arara-azul', cor: '#5b34c9' },
-  { id: 4, nome: 'Lobo-guará', cor: '#0b7a55' },
+  { id: 1, nome: 'Capivara', cor: '#5b2be0' },
+  { id: 2, nome: 'Tamanduá', cor: '#d2a106' },
+  { id: 3, nome: 'Arara-azul', cor: '#1f6fd1' },
+  { id: 4, nome: 'Lobo-guará', cor: '#b8321c' },
+  { id: 5, nome: 'Onça-pintada', cor: '#11704a' },
 ]
 
-const estado = reactive({
-  A: { animais: [...animaisIniciais], versao: 0 },
-  B: { animais: [...animaisIniciais], versao: 0 },
-})
+const modo = ref('sem')
+const lista = ref([...animaisIniciais])
+const versao = ref(0)
+const listaEl = ref(null)
+const relato = ref(null)
 
-function removerPrimeiro(lista) {
-  estado[lista].animais = estado[lista].animais.slice(1)
+const opcoesModo = [
+  { valor: 'sem', rotulo: 'sem :key' },
+  { valor: 'com', rotulo: ':key="animal.id"' },
+]
+
+function lerCampos() {
+  return [...(listaEl.value?.querySelectorAll('li') ?? [])].map((li) => ({
+    li,
+    nome: li.dataset.nome,
+    texto: li.querySelector('input')?.value ?? '',
+  }))
 }
 
-function restaurar(lista) {
-  estado[lista].animais = [...animaisIniciais]
-  estado[lista].versao++
+async function remover(id) {
+  const antes = lerCampos()
+  const removido = lista.value.find((animal) => animal.id === id)
+  const posicao = lista.value.findIndex((animal) => animal.id === id) + 1
+  lista.value = lista.value.filter((animal) => animal.id !== id)
+  await nextTick()
+  const depois = lerCampos()
+
+  const donos = Object.fromEntries(antes.filter((c) => c.texto).map((c) => [c.texto, c.nome]))
+  const trocas = depois
+    .filter((c) => c.texto && donos[c.texto] && donos[c.texto] !== c.nome)
+    .map((c) => ({ texto: c.texto, era: donos[c.texto], agora: c.nome, li: c.li }))
+
+  relato.value = { removido: removido.nome, posicao, trocas, tinhaTexto: antes.some((c) => c.texto) }
+
+  if (!movimentoReduzido()) {
+    trocas.forEach((troca) =>
+      gsap.fromTo(troca.li, { backgroundColor: '#fbe2da' }, { backgroundColor: '#ffffff', duration: 2, ease: 'power2.out' }),
+    )
+  }
 }
+
+function restaurar() {
+  lista.value = [...animaisIniciais]
+  versao.value++
+  relato.value = null
+}
+
+function trocarModo() {
+  restaurar()
+}
+
+function resetar() {
+  modo.value = 'sem'
+  restaurar()
+}
+
+const codigo = computed(() =>
+  modo.value === 'sem'
+    ? `<li v-for="animal in animais">
+  {{ animal.nome }}
+  <input type="text">
+  <button @click="remover(animal.id)">Remover</button>
+</li>`
+    : `<li v-for="animal in animais" :key="animal.id">
+  {{ animal.nome }}
+  <input type="text">
+  <button @click="remover(animal.id)">Remover</button>
+</li>`,
+)
 </script>
 
 <template>
-  <div class="bug">
-    <ol class="bug__passos">
-      <li>Digite algo no campo do <strong>Tamanduá</strong> (2º animal) nas <strong>duas</strong> listas.</li>
-      <li>Clique em <strong>Remover 1º animal</strong> nas duas listas.</li>
-      <li>Compare: em qual lista o texto continuou ao lado do Tamanduá?</li>
-    </ol>
+  <BancadaLab
+    id="lab-07"
+    numero="07"
+    titulo="O bug da lista"
+    resumo="Uma lista de animais com um campo de texto em cada item. Escreva no campo de um animal, remova um animal acima dele e veja para onde o texto vai, com e sem :key."
+    @reset="resetar"
+  >
+    <template #controles>
+      <CampoSegmentado v-model="modo" legenda="Renderizar com" :opcoes="opcoesModo" @update:model-value="trocarModo" />
+      <ol class="passos">
+        <li>Escreva algo no campo do <strong>Tamanduá</strong>.</li>
+        <li>Remova a <strong>Capivara</strong> (o animal acima).</li>
+        <li>Veja onde o texto foi parar. Troque o modo e repita.</li>
+      </ol>
+      <button type="button" class="btn btn--ghost" @click="restaurar">Restaurar a lista</button>
+    </template>
 
-    <div class="bug__listas">
-      <section class="lista lista--erro" aria-labelledby="lista-a-titulo">
-        <header class="lista__topo">
-          <p class="lista__selo">Lista A</p>
-          <h3 id="lista-a-titulo" class="lista__titulo">
-            <code>v-for</code> <strong>sem</strong> <code>:key</code>
-          </h3>
-        </header>
-        <div class="lista__acoes">
-          <button
-            type="button"
-            class="botao"
-            :disabled="estado.A.animais.length === 0"
-            @click="removerPrimeiro('A')"
-          >
-            Remover 1º Animal
-          </button>
-          <button type="button" class="botao botao--contorno" @click="restaurar('A')">
-            Restaurar
-          </button>
-        </div>
-        <ul :key="estado.A.versao" class="lista__itens">
-          <li v-for="animal in estado.A.animais" class="item">
-            <span class="item__nome">
-              <span class="item__cor" :style="{ background: animal.cor }" aria-hidden="true"></span>
-              {{ animal.nome }}
-            </span>
-            <input
-              type="text"
-              class="item__campo"
-              :placeholder="`Apelido para ${animal.nome}`"
-              :aria-label="`Apelido para ${animal.nome} (lista A)`"
-            />
+    <template #palco>
+      <div class="cena" :class="`cena--${modo}`">
+        <p class="cena__modo label">{{ modo === 'sem' ? 'v-for sem :key' : 'v-for com :key="animal.id"' }}</p>
+        <ul v-if="modo === 'sem'" ref="listaEl" :key="`sem-${versao}`" class="lista">
+          <li v-for="animal in lista" class="item" :data-nome="animal.nome">
+            <span class="item__nome"><span class="item__cor" :style="{ background: animal.cor }"></span>{{ animal.nome }}</span>
+            <input class="input item__campo" type="text" :placeholder="`Apelido para ${animal.nome}`" :aria-label="`Apelido para ${animal.nome}`" />
+            <button type="button" class="btn btn--small btn--ghost" @click="remover(animal.id)">
+              Remover<span class="sr-only"> {{ animal.nome }}</span>
+            </button>
           </li>
         </ul>
-        <p v-if="estado.A.animais.length === 0" class="lista__vazia">Lista vazia. Clique em Restaurar.</p>
-      </section>
-
-      <section class="lista lista--ok" aria-labelledby="lista-b-titulo">
-        <header class="lista__topo">
-          <p class="lista__selo">Lista B</p>
-          <h3 id="lista-b-titulo" class="lista__titulo">
-            <code>v-for</code> <strong>com</strong> <code>:key="animal.id"</code>
-          </h3>
-        </header>
-        <div class="lista__acoes">
-          <button
-            type="button"
-            class="botao"
-            :disabled="estado.B.animais.length === 0"
-            @click="removerPrimeiro('B')"
-          >
-            Remover 1º Animal
-          </button>
-          <button type="button" class="botao botao--contorno" @click="restaurar('B')">
-            Restaurar
-          </button>
-        </div>
-        <ul :key="estado.B.versao" class="lista__itens">
-          <li v-for="animal in estado.B.animais" :key="animal.id" class="item">
-            <span class="item__nome">
-              <span class="item__cor" :style="{ background: animal.cor }" aria-hidden="true"></span>
-              {{ animal.nome }}
-            </span>
-            <input
-              type="text"
-              class="item__campo"
-              :placeholder="`Apelido para ${animal.nome}`"
-              :aria-label="`Apelido para ${animal.nome} (lista B)`"
-            />
+        <ul v-else ref="listaEl" :key="`com-${versao}`" class="lista">
+          <li v-for="animal in lista" :key="animal.id" class="item" :data-nome="animal.nome">
+            <span class="item__nome"><span class="item__cor" :style="{ background: animal.cor }"></span>{{ animal.nome }}</span>
+            <input class="input item__campo" type="text" :placeholder="`Apelido para ${animal.nome}`" :aria-label="`Apelido para ${animal.nome}`" />
+            <button type="button" class="btn btn--small btn--ghost" @click="remover(animal.id)">
+              Remover<span class="sr-only"> {{ animal.nome }}</span>
+            </button>
           </li>
         </ul>
-        <p v-if="estado.B.animais.length === 0" class="lista__vazia">Lista vazia. Clique em Restaurar.</p>
-      </section>
-    </div>
+        <p v-if="!lista.length" class="cena__vazia">A lista ficou vazia. Clique em Restaurar.</p>
+      </div>
+    </template>
 
-    <p class="bug__nota">
-      Os campos de texto aqui <strong>não</strong> usam <code>v-model</code> de propósito: o texto
-      digitado vive só no DOM, como acontece com qualquer estado que o Vue não controla (foco,
-      seleção, animações, componentes de terceiros).
-    </p>
-  </div>
+    <template #narracao>
+      <p v-if="!relato">
+        Os campos não usam <code>v-model</code> de propósito: o texto digitado vive só no DOM, como foco, seleção ou o
+        estado de um componente de terceiros.
+      </p>
+      <template v-else>
+        <p>Você removeu <strong>{{ relato.removido }}</strong> (posição {{ relato.posicao }}).</p>
+        <p v-for="troca in relato.trocas" :key="troca.texto" class="alerta">
+          O texto "{{ troca.texto }}" era do <strong>{{ troca.era }}</strong> e agora aparece ao lado de
+          <strong>{{ troca.agora }}</strong>.
+        </p>
+        <p v-if="relato.trocas.length && modo === 'sem'">
+          Sem <code>:key</code>, o Vue reaproveitou os <code>&lt;li&gt;</code> por posição: trocou só os nomes e
+          apagou o último item. Os inputs ficaram onde estavam.
+        </p>
+        <p v-else-if="modo === 'com' && relato.tinhaTexto">
+          Com <code>:key</code>, o Vue sabia qual elemento era de quem e removeu exatamente o de
+          {{ relato.removido }}. Nenhum texto trocou de dono.
+        </p>
+        <p v-else-if="!relato.tinhaTexto">Nenhum campo tinha texto. Escreva em um campo abaixo do removido e repita.</p>
+      </template>
+    </template>
+
+    <template #codigo>
+      <CodigoEditor :arquivo="`ListaAnimais.vue · ${modo === 'sem' ? 'sem :key' : 'com :key'}`" linguagem="vue" :codigo="codigo" :destaque="[1]" />
+    </template>
+  </BancadaLab>
 </template>
 
 <style scoped>
-.bug {
+.passos {
   display: grid;
-  gap: var(--espaco-5);
-  min-width: 0;
-}
-
-.bug__passos {
-  display: grid;
-  gap: var(--espaco-2);
+  gap: var(--space-2);
   margin: 0;
-  padding: var(--espaco-4) var(--espaco-4) var(--espaco-4) var(--espaco-6);
-  border-radius: var(--raio-md);
-  background: var(--cor-ambar-suave);
-  font-size: var(--texto-sm);
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
 }
 
-.bug__listas {
+.cena {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
-  gap: var(--espaco-5);
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: var(--border-strong);
+  border-top: 0.375rem solid var(--color-bad);
+  background: var(--color-surface);
+}
+
+.cena--com {
+  border-top-color: var(--color-ok);
+}
+
+.cena__modo {
+  color: var(--color-bad);
+}
+
+.cena--com .cena__modo {
+  color: var(--color-ok);
 }
 
 .lista {
   display: grid;
-  align-content: start;
-  gap: var(--espaco-4);
-  min-width: 0;
-  padding: var(--espaco-4);
-  border-radius: var(--raio-md);
-  border: var(--borda);
-  border-top: 0.25rem solid var(--cor-erro);
-  background: var(--cor-papel);
-}
-
-.lista--ok {
-  border-top-color: var(--cor-sucesso);
-}
-
-.lista__topo {
-  display: grid;
-  gap: var(--espaco-1);
-}
-
-.lista__selo {
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cor-erro);
-}
-
-.lista--ok .lista__selo {
-  color: var(--cor-sucesso);
-}
-
-.lista__titulo {
-  font-family: var(--fonte-texto);
-  font-size: var(--texto-lg);
-  font-weight: 500;
-}
-
-.lista__acoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--espaco-2);
-}
-
-.lista__itens {
-  display: grid;
-  gap: var(--espaco-2);
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -193,52 +196,52 @@ function restaurar(lista) {
 
 .item {
   display: grid;
-  gap: var(--espaco-2);
-  padding: var(--espaco-3);
-  border-radius: var(--raio-sm);
-  border: var(--borda);
-  background: var(--cor-superficie);
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2);
+  border: var(--border-soft);
+  background: #fff;
 }
 
 .item__nome {
   display: inline-flex;
   align-items: center;
-  gap: var(--espaco-2);
+  gap: var(--space-2);
   font-weight: 600;
 }
 
 .item__cor {
   width: 0.75rem;
   height: 0.75rem;
-  border-radius: 50%;
   flex-shrink: 0;
 }
 
 .item__campo {
-  width: 100%;
-  min-width: 0;
+  grid-column: 1 / -1;
+  grid-row: 2;
   min-height: 2.5rem;
-  padding: var(--espaco-2) var(--espaco-3);
-  border: var(--espessura) solid var(--cor-linha-forte);
-  border-radius: var(--raio-sm);
-  font-size: var(--texto-base);
 }
 
-.lista__vazia {
-  font-size: var(--texto-sm);
-  color: var(--cor-tinta-suave);
+.cena__vazia {
+  font-size: var(--text-sm);
+  color: var(--color-ink-3);
 }
 
-.bug__nota {
-  font-size: var(--texto-sm);
-  color: var(--cor-tinta-suave);
-  max-width: var(--largura-leitura);
+.alerta {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bad-soft);
+  color: var(--color-bad);
 }
 
-@media (min-width: 36rem) {
+@container lab (min-width: 40rem) {
   .item {
-    grid-template-columns: minmax(7rem, auto) 1fr;
-    align-items: center;
+    grid-template-columns: 9rem minmax(0, 1fr) auto;
+  }
+
+  .item__campo {
+    grid-column: auto;
+    grid-row: auto;
   }
 }
 </style>

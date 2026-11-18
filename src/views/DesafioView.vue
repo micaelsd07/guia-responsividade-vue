@@ -1,323 +1,489 @@
 <script setup>
-import { ref, computed } from 'vue'
-import PaginaSecao from '@/components/guia/PaginaSecao.vue'
-import BlocoSecao from '@/components/guia/BlocoSecao.vue'
+import { ref, reactive, computed, nextTick } from 'vue'
+import AberturaSecao from '@/components/guia/AberturaSecao.vue'
+import PaginadorSecoes from '@/components/guia/PaginadorSecoes.vue'
+import { perguntas } from '@/data/quiz'
+import { usePageMotion, gsap, movimentoReduzido } from '@/composables/useMotion'
 
-const RESPOSTA = 696
+const raiz = ref(null)
+usePageMotion(raiz)
 
-const palpite = ref('')
-const tentativas = ref(0)
-const verificado = ref(false)
-const solucaoAberta = ref(false)
+const indice = ref(0)
+const escolha = ref(null)
+const respostas = reactive({})
+const finalizado = ref(false)
+const tituloPergunta = ref(null)
+const cartao = ref(null)
+const placar = ref(null)
 
-const dicas = [
-  'No Laboratório 01 (seção 02), arraste o slider até o fim: quantos px vale a fonte "Muito grande"?',
-  'Releia a Pergunta-guia 2: quando a fonte do navegador muda, o que acontece com o valor de 1rem?',
-  'A Pergunta-guia 3 já tem a conta de 2 colunas em rem. Só falta converter para px com o novo valor de 1rem.',
-]
+const atual = computed(() => perguntas[indice.value])
+const respondida = computed(() => respostas[atual.value.id] !== undefined)
+const acertos = computed(() => perguntas.filter((p) => respostas[p.id] === p.correta).length)
+const respondidas = computed(() => Object.keys(respostas).length)
+const percentual = computed(() => Math.round((acertos.value / perguntas.length) * 100))
 
-const errosComuns = {
-  464: '464px é a resposta para 1rem = 16px (a fonte "Média"). Com a fonte "Muito grande", quanto vale 1rem?',
-  580: 'Você usou 20px, que é a fonte "Grande". Confira no Laboratório 01 quanto vale a "Muito grande".',
-  672: 'Quase! 2 × 14rem = 28rem, mas faltou somar o gap entre as duas colunas.',
-  720: 'Perto! Entre 2 colunas existe só 1 gap, não 2.',
-  336: 'Isso é a largura de uma única coluna. A pergunta é sobre quando aparecem 2.',
-  1056: 'Essa seria a largura para 3 colunas. A pergunta é sobre 2.',
-}
-
-const dicasVisiveis = ref(0)
-
-const valor = computed(() => Number(String(palpite.value).replace(',', '.').replace(/px/i, '').trim()))
-
-const retorno = computed(() => {
-  if (!verificado.value) return null
-  if (!Number.isFinite(valor.value) || String(palpite.value).trim() === '') {
-    return { tipo: 'aviso', texto: 'Digite um número em px, por exemplo 500.' }
-  }
-  if (valor.value === RESPOSTA) {
-    return {
-      tipo: 'certo',
-      texto: 'Isso! Com a fonte "Muito grande", as 2 colunas só aparecem a partir de 696px de contêiner.',
-    }
-  }
-  return {
-    tipo: 'erro',
-    texto: errosComuns[valor.value] ?? 'Ainda não. Peça uma dica abaixo ou volte aos laboratórios.',
-  }
+const mensagem = computed(() => {
+  if (acertos.value === perguntas.length) return 'Domínio completo. Você leu, mexeu e calculou tudo.'
+  if (acertos.value >= 8) return 'Muito bom. Revise as poucas perguntas marcadas e volte aos laboratórios delas.'
+  if (acertos.value >= 5) return 'Bom começo. Os laboratórios das perguntas marcadas vão esclarecer o resto.'
+  return 'Vale refazer o caminho: cada pergunta tem um laboratório que mostra a resposta acontecendo.'
 })
 
-function verificar() {
-  verificado.value = true
-  tentativas.value++
+function animar(el, de) {
+  if (!el || movimentoReduzido()) return
+  gsap.fromTo(el, de, { autoAlpha: 1, x: 0, y: 0, scale: 1, duration: 0.45, ease: 'power3.out' })
 }
 
-function mostrarDica() {
-  dicasVisiveis.value = Math.min(dicasVisiveis.value + 1, dicas.length)
+function verificar() {
+  if (escolha.value === null || respondida.value) return
+  respostas[atual.value.id] = escolha.value
+  nextTick(() => {
+    animar(raiz.value?.querySelector('.retorno'), { autoAlpha: 0, y: 12 })
+    if (respostas[atual.value.id] === atual.value.correta) animar(placar.value, { scale: 1.15 })
+  })
+}
+
+async function irPara(novo) {
+  finalizado.value = false
+  indice.value = novo
+  escolha.value = respostas[perguntas[novo].id] ?? null
+  await nextTick()
+  animar(cartao.value, { autoAlpha: 0, x: 24 })
+  tituloPergunta.value?.focus()
+}
+
+function proxima() {
+  if (indice.value < perguntas.length - 1) irPara(indice.value + 1)
+  else concluir()
+}
+
+async function concluir() {
+  finalizado.value = true
+  await nextTick()
+  const el = raiz.value?.querySelector('.resultado')
+  animar(el, { autoAlpha: 0, y: 24 })
+  el?.querySelector('h2')?.focus()
+}
+
+function refazer() {
+  Object.keys(respostas).forEach((chave) => delete respostas[chave])
+  irPara(0)
+}
+
+function estadoAlternativa(i) {
+  if (!respondida.value) return escolha.value === i ? 'escolhida' : ''
+  if (i === atual.value.correta) return 'correta'
+  if (i === respostas[atual.value.id]) return 'errada'
+  return 'neutra'
+}
+
+function rotuloSegmento(p, i) {
+  const estado = respostas[p.id] === undefined ? '' : respostas[p.id] === p.correta ? ', acertada' : ', errada'
+  return `Ir para a pergunta ${i + 1}${estado}`
 }
 </script>
 
 <template>
-  <PaginaSecao
-    nome="desafio"
-    resumo="Uma pergunta que só se responde usando o próprio guia. Ela junta dois laboratórios e duas perguntas-guia: você vai precisar do Simulador de Leitura, do Construtor de Dashboard e entender de verdade o que é 1rem."
-  >
-    <section class="desafio" aria-labelledby="desafio-pergunta">
-      <p class="desafio__selo">O desafio</p>
-      <h2 id="desafio-pergunta" class="desafio__pergunta">
-        A Dona Lúcia tem baixa visão e deixa o navegador sempre com a fonte
-        <strong>"Muito grande"</strong>, a última opção do nosso Laboratório 01. Ela abre o
-        Laboratório 02 sem mexer nos valores padrão. A partir de qual largura do contêiner, em px,
-        ela vê os cartões em <strong>2 colunas</strong>?
-      </h2>
-      <p class="desafio__nota">
-        Atenção: aqui 1rem não vale 16px. Descubra o valor certo usando o guia.
-      </p>
+  <div ref="raiz">
+    <AberturaSecao nome="desafio" />
 
-      <form class="desafio__form" @submit.prevent="verificar">
-        <label class="campo" for="palpite">
-          Sua resposta (em px)
-          <input
-            id="palpite"
-            v-model="palpite"
-            type="text"
-            inputmode="numeric"
-            autocomplete="off"
-            placeholder="Ex.: 500"
-          />
-        </label>
-        <button type="submit" class="botao desafio__botao">Verificar</button>
-      </form>
+    <section id="quiz" class="quiz wrap" aria-labelledby="quiz-titulo">
+      <h2 id="quiz-titulo" class="sr-only">Perguntas do desafio</h2>
 
-      <p
-        v-if="retorno"
-        class="desafio__retorno"
-        :class="`desafio__retorno--${retorno.tipo}`"
-        role="status"
-      >
-        {{ retorno.texto }}
-        <span v-if="tentativas > 1"> ({{ tentativas }} tentativas)</span>
-      </p>
+      <div class="progresso">
+        <p class="progresso__texto" aria-live="polite">
+          <span class="label">Pergunta {{ finalizado ? perguntas.length : indice + 1 }} de {{ perguntas.length }}</span>
+          <span ref="placar" class="progresso__placar">{{ acertos }} {{ acertos === 1 ? 'acerto' : 'acertos' }}</span>
+        </p>
+        <ol class="progresso__segmentos" aria-label="Progresso das respostas">
+          <li v-for="(p, i) in perguntas" :key="p.id">
+            <button
+              type="button"
+              class="segmento"
+              :class="{
+                'is-atual': !finalizado && i === indice,
+                'is-certa': respostas[p.id] === p.correta,
+                'is-errada': respostas[p.id] !== undefined && respostas[p.id] !== p.correta,
+              }"
+              :aria-label="rotuloSegmento(p, i)"
+              :aria-current="!finalizado && i === indice ? 'step' : undefined"
+              @click="irPara(i)"
+            ></button>
+          </li>
+        </ol>
+      </div>
+
+      <div v-if="!finalizado" ref="cartao" :key="atual.id" class="cartao">
+        <p v-if="atual.destaque" class="cartao__destaque label">{{ atual.destaque }}</p>
+        <fieldset class="cartao__campo">
+          <legend>
+            <span ref="tituloPergunta" class="cartao__enunciado" tabindex="-1">{{ atual.enunciado }}</span>
+          </legend>
+          <div class="alternativas">
+            <label
+              v-for="(alternativa, i) in atual.alternativas"
+              :key="alternativa"
+              class="alternativa"
+              :class="`alternativa--${estadoAlternativa(i)}`"
+            >
+              <input v-model="escolha" class="sr-only" type="radio" :name="atual.id" :value="i" :disabled="respondida" />
+              <span class="alternativa__letra" aria-hidden="true">{{ 'ABCD'[i] }}</span>
+              <span class="alternativa__texto">{{ alternativa }}</span>
+              <span v-if="estadoAlternativa(i) === 'correta'" class="alternativa__marca">correta</span>
+              <span v-else-if="estadoAlternativa(i) === 'errada'" class="alternativa__marca">sua resposta</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div
+          v-if="respondida"
+          class="retorno"
+          :class="respostas[atual.id] === atual.correta ? 'retorno--certo' : 'retorno--errado'"
+          role="status"
+        >
+          <p class="retorno__titulo">{{ respostas[atual.id] === atual.correta ? 'Certo.' : 'Não foi dessa vez.' }}</p>
+          <p>{{ atual.explicacao }}</p>
+          <RouterLink :to="{ path: atual.secao.caminho, hash: atual.secao.hash }" class="retorno__link">
+            Rever na seção {{ atual.secao.numero }} →
+          </RouterLink>
+        </div>
+
+        <div class="cartao__acoes">
+          <button type="button" class="btn btn--ghost" :disabled="indice === 0" @click="irPara(indice - 1)">← Anterior</button>
+          <button v-if="!respondida" type="button" class="btn btn--hard" :disabled="escolha === null" @click="verificar">
+            Verificar resposta
+          </button>
+          <button v-else type="button" class="btn btn--hard" @click="proxima">
+            {{ indice < perguntas.length - 1 ? 'Próxima pergunta →' : 'Ver resultado' }}
+          </button>
+        </div>
+      </div>
+
+      <section v-else id="resultado" class="resultado" aria-labelledby="resultado-titulo">
+        <p class="label resultado__rotulo">Resultado</p>
+        <h2 id="resultado-titulo" class="resultado__nota" tabindex="-1">
+          {{ acertos }}<span>/{{ perguntas.length }}</span>
+        </h2>
+        <p class="resultado__barra" aria-hidden="true"><span :style="{ width: `${percentual}%` }"></span></p>
+        <p class="lead">{{ mensagem }}</p>
+        <p v-if="respondidas < perguntas.length" class="resultado__aviso">
+          Você deixou {{ perguntas.length - respondidas }} sem responder.
+        </p>
+        <ol class="revisao">
+          <li v-for="(p, i) in perguntas" :key="p.id" :class="respostas[p.id] === p.correta ? 'is-certa' : 'is-errada'">
+            <span class="revisao__n">{{ String(i + 1).padStart(2, '0') }}</span>
+            <span class="revisao__texto">{{ p.enunciado }}</span>
+            <span class="revisao__estado">
+              {{ respostas[p.id] === p.correta ? 'acertou' : respostas[p.id] === undefined ? 'em branco' : 'errou' }}
+            </span>
+            <RouterLink :to="{ path: p.secao.caminho, hash: p.secao.hash }" class="revisao__link">
+              Seção {{ p.secao.numero }}
+            </RouterLink>
+          </li>
+        </ol>
+        <div class="cartao__acoes">
+          <button type="button" class="btn btn--hard" @click="refazer">Refazer o desafio</button>
+          <RouterLink to="/laboratorios" class="btn btn--ghost">Voltar aos laboratórios</RouterLink>
+        </div>
+      </section>
     </section>
 
-    <BlocoSecao id="dicas" rotulo="Dicas" titulo="Travou? Peça uma dica de cada vez">
-      <ol v-if="dicasVisiveis" class="dicas">
-        <li v-for="dica in dicas.slice(0, dicasVisiveis)" :key="dica">{{ dica }}</li>
-      </ol>
-      <div class="acoes">
-        <button
-          type="button"
-          class="botao botao--contorno"
-          :disabled="dicasVisiveis === dicas.length"
-          @click="mostrarDica"
-        >
-          {{ dicasVisiveis === dicas.length ? 'Sem mais dicas' : `Mostrar dica ${dicasVisiveis + 1} de ${dicas.length}` }}
-        </button>
-        <RouterLink class="botao botao--contorno" to="/unidades#lab-1-titulo">Ir para o Laboratório 01</RouterLink>
-        <RouterLink class="botao botao--contorno" to="/flexbox-grid#lab-2-titulo">Ir para o Laboratório 02</RouterLink>
-      </div>
-    </BlocoSecao>
-
-    <BlocoSecao id="solucao" rotulo="Solução" titulo="A conta completa">
-      <button
-        type="button"
-        class="botao"
-        :aria-expanded="solucaoAberta"
-        aria-controls="solucao-conteudo"
-        @click="solucaoAberta = !solucaoAberta"
-      >
-        {{ solucaoAberta ? 'Esconder solução' : 'Mostrar solução' }}
-      </button>
-      <div v-if="solucaoAberta" id="solucao-conteudo" class="solucao">
-        <ol class="solucao__conta">
-          <li><span>Lab 01</span> "Muito grande" = 24px, então 1rem = 24px</li>
-          <li><span>Lab 02</span> padrão: minmax(14rem, 1fr) e gap 1rem</li>
-          <li><span>Colunas</span> 2 × 14rem = 28rem</li>
-          <li><span>Gap</span> 1 espaço entre 2 colunas = 1rem</li>
-          <li><span>Total</span> 28rem + 1rem = 29rem</li>
-          <li><span>Em px</span> 29 × 24px = <strong>696px</strong></li>
-        </ol>
-        <p>
-          A conta em rem é a mesma da Pergunta-guia 3 (29rem). O que muda é o valor de 1rem: como
-          explica a Pergunta-guia 2, ele acompanha a fonte escolhida no navegador. Para a Dona
-          Lúcia, 29rem valem 696px, não 464px.
-        </p>
-        <p>
-          <strong>Por que isso é bom:</strong> como os cartões cresceram junto com o texto, o grid
-          espera ter mais espaço antes de dividir a tela em duas colunas. Assim o texto grande nunca
-          fica espremido. Com <code>minmax(224px, 1fr)</code> em px, as colunas se dividiriam nos
-          mesmos 464px e as letras grandes ficariam apertadas dentro de cartões estreitos.
-        </p>
-        <p>
-          <strong>Quer conferir?</strong> Mude a fonte do seu navegador para "Muito grande" (no
-          Chrome: Configurações › Aparência › Tamanho da fonte) e abra o Laboratório 02. Com 14 e 1
-          nos campos, a linha da conta vai mostrar "com 1rem = 24px" e a próxima coluna em 696px.
-        </p>
-      </div>
-    </BlocoSecao>
-  </PaginaSecao>
+    <PaginadorSecoes nome="desafio" />
+  </div>
 </template>
 
 <style scoped>
-.desafio {
+.quiz {
   display: grid;
-  gap: var(--espaco-4);
-  padding: var(--espaco-5) var(--espaco-4);
-  border-radius: var(--raio-lg);
-  background: var(--cor-roxo-900);
-  color: var(--cor-roxo-100);
+  gap: var(--space-6);
+  padding-top: var(--space-7);
 }
 
-.desafio__selo {
-  justify-self: start;
-  padding: var(--espaco-1) var(--espaco-3);
-  border-radius: 2rem;
-  background: var(--cor-ambar);
-  color: var(--cor-roxo-950);
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.desafio__pergunta {
-  max-width: var(--largura-leitura);
-  font-size: var(--titulo-sm);
-  hyphens: manual;
-  font-weight: 500;
-  line-height: 1.3;
-  color: #fff;
-}
-
-.desafio__pergunta code {
-  background: rgb(255 255 255 / 0.12);
-  color: #fff;
-  font-size: 0.75em;
-}
-
-.desafio__pergunta strong {
-  color: var(--cor-ambar);
-}
-
-.desafio__nota {
-  font-size: var(--texto-sm);
-  color: var(--cor-roxo-200);
-}
-
-.desafio__form {
+.progresso {
   display: grid;
-  gap: var(--espaco-3);
-  max-width: 28rem;
+  gap: var(--space-3);
 }
 
-.desafio__form .campo {
-  color: #fff;
-}
-
-.desafio__form input {
-  color: var(--cor-tinta);
-}
-
-.desafio__botao {
-  background: var(--cor-ambar);
-  border-color: var(--cor-ambar);
-  color: var(--cor-roxo-950);
-}
-
-.desafio__botao:hover:not(:disabled) {
-  background: #f5c76c;
-  color: var(--cor-roxo-950);
-}
-
-.desafio__retorno {
-  max-width: var(--largura-leitura);
-  padding: var(--espaco-3) var(--espaco-4);
-  border-radius: var(--raio-md);
-  font-weight: 500;
-}
-
-.desafio__retorno--certo {
-  background: var(--cor-sucesso-suave);
-  color: var(--cor-sucesso);
-}
-
-.desafio__retorno--erro {
-  background: var(--cor-erro-suave);
-  color: var(--cor-erro);
-}
-
-.desafio__retorno--aviso {
-  background: var(--cor-ambar-suave);
-  color: var(--cor-roxo-950);
-}
-
-.dicas {
-  display: grid;
-  gap: var(--espaco-3);
-  max-width: var(--largura-leitura);
-  margin: 0;
-  padding-left: var(--espaco-5);
-}
-
-.acoes {
+.progresso__texto {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--espaco-3);
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
-.solucao {
-  display: grid;
-  gap: var(--espaco-4);
-  max-width: var(--largura-leitura);
+.progresso__placar {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  background: var(--color-signal);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
 }
 
-.solucao__conta {
+.progresso__segmentos {
   display: grid;
-  gap: var(--espaco-2);
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 0.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-sm);
 }
 
-.solucao__conta li {
+.segmento {
+  display: block;
+  width: 100%;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.segmento::after {
+  content: '';
+  display: block;
+  height: 0.5rem;
+  background: var(--color-rule);
+  transition: background-color var(--duration-base) var(--ease-out);
+}
+
+.segmento.is-atual::after {
+  background: var(--color-ink);
+}
+
+.segmento.is-certa::after {
+  background: var(--color-ok);
+}
+
+.segmento.is-errada::after {
+  background: var(--color-bad);
+}
+
+.cartao {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 52rem;
+}
+
+.cartao__destaque {
+  justify-self: start;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.cartao__campo {
+  display: grid;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.cartao__campo legend {
+  padding: 0;
+  margin-bottom: var(--space-5);
+}
+
+.cartao__enunciado {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--heading-md);
+  font-weight: 700;
+  font-stretch: 80%;
+  line-height: 1.1;
+  outline: none;
+}
+
+.alternativas {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.alternativa {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3.5rem;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
+  border: var(--border-strong);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.alternativa:hover {
+  background: var(--color-accent-soft);
+}
+
+.alternativa:has(input:focus-visible) {
+  outline: 0.1875rem solid var(--color-accent);
+  outline-offset: 0.125rem;
+}
+
+.alternativa:has(input:disabled) {
+  cursor: default;
+}
+
+.alternativa__letra {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: var(--border-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.alternativa__marca {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.alternativa--escolhida {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  transform: translate(-0.125rem, -0.125rem);
+  box-shadow: var(--shadow-hard-sm);
+}
+
+.alternativa--escolhida:hover {
+  background: var(--color-ink);
+}
+
+.alternativa--escolhida .alternativa__letra {
+  border-color: var(--color-signal);
+  color: var(--color-signal);
+}
+
+.alternativa--correta {
+  background: var(--color-ok-soft);
+  border-color: var(--color-ok);
+  color: var(--color-ok);
+}
+
+.alternativa--errada {
+  background: var(--color-bad-soft);
+  border-color: var(--color-bad);
+  color: var(--color-bad);
+}
+
+.alternativa--neutra {
+  opacity: 0.55;
+}
+
+.retorno {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-left: 0.3125rem solid var(--color-ok);
+  background: var(--color-ok-soft);
+}
+
+.retorno--errado {
+  border-left-color: var(--color-bad);
+  background: var(--color-bad-soft);
+}
+
+.retorno__titulo {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-stretch: 80%;
+}
+
+.retorno__link {
+  justify-self: start;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.cartao__acoes {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--espaco-2);
-  padding: var(--espaco-2) var(--espaco-3);
-  border-radius: var(--raio-sm);
-  background: var(--cor-roxo-50);
-  border: var(--borda);
+  gap: var(--space-3);
 }
 
-.solucao__conta li:last-child {
-  background: var(--cor-ambar-suave);
-  border-color: var(--cor-ambar);
+.resultado {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 52rem;
 }
 
-.solucao__conta span {
-  min-width: 4.5rem;
-  font-size: var(--texto-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--cor-roxo-600);
+.resultado__rotulo {
+  color: var(--color-accent);
 }
 
-@media (min-width: 36rem) {
-  .desafio__form {
-    grid-template-columns: 1fr auto;
-    align-items: end;
-  }
+.resultado__nota {
+  font-size: clamp(5rem, 3rem + 10vw, 11rem);
+  font-weight: 700;
+  font-stretch: 75%;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  outline: none;
 }
 
-@media (min-width: 48rem) {
-  .desafio {
-    padding: var(--espaco-7) var(--espaco-6);
-  }
+.resultado__nota span {
+  color: var(--color-ink-3);
+}
 
-  .desafio__pergunta {
-    font-size: var(--titulo-lg);
-  }
+.resultado__barra {
+  height: 0.75rem;
+  border: var(--border-strong);
+}
+
+.resultado__barra span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.resultado__aviso {
+  color: var(--color-warn);
+}
+
+.revisao {
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--border-strong);
+}
+
+.revisao li {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: var(--border-soft);
+  font-size: var(--text-sm);
+}
+
+.revisao__n {
+  font-family: var(--font-mono);
+  color: var(--color-ink-3);
+}
+
+.revisao__estado {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.is-certa .revisao__estado {
+  color: var(--color-ok);
+}
+
+.is-errada .revisao__estado {
+  color: var(--color-bad);
+}
+
+.revisao__link {
+  grid-column: 2;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
 }
 </style>

@@ -1,301 +1,190 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import BancadaLab from '@/components/guia/BancadaLab.vue'
+import CodigoEditor from '@/components/guia/CodigoEditor.vue'
+import CampoSegmentado from '@/components/controles/CampoSegmentado.vue'
 
 const PADRAO = 16
 const fonteNavegador = ref(PADRAO)
 const fonteOriginal = ref(PADRAO)
-const alterado = ref(false)
 
 const presets = [
-  { valor: 12, nome: 'Pequena' },
-  { valor: 16, nome: 'Média' },
-  { valor: 20, nome: 'Grande' },
-  { valor: 24, nome: 'Muito grande' },
+  { valor: 12, rotulo: 'Pequena · 12' },
+  { valor: 16, rotulo: 'Média · 16' },
+  { valor: 20, rotulo: 'Grande · 20' },
+  { valor: 24, rotulo: 'Muito grande · 24' },
 ]
 
-const presetAtual = computed(
-  () => presets.find((preset) => preset.valor === fonteNavegador.value)?.nome ?? 'Personalizada',
-)
+const nomePreset = computed(() => presets.find((p) => p.valor === fonteNavegador.value)?.rotulo.split(' · ')[0] ?? 'Personalizada')
 const tituloRem = computed(() => +(1.25 * fonteNavegador.value).toFixed(2))
 
 watch(fonteNavegador, (valor) => {
-  alterado.value = true
-  document.documentElement.style.fontSize = `${valor}px`
+  document.documentElement.style.fontSize = valor === fonteOriginal.value ? '' : `${valor}px`
 })
 
-function restaurar() {
-  document.documentElement.style.fontSize = ''
+function resetar() {
   fonteNavegador.value = fonteOriginal.value
-  requestAnimationFrame(() => {
-    document.documentElement.style.fontSize = ''
-    alterado.value = false
-  })
+  document.documentElement.style.fontSize = ''
 }
 
 onMounted(() => {
   const atual = parseFloat(getComputedStyle(document.documentElement).fontSize) || PADRAO
   fonteOriginal.value = atual
   fonteNavegador.value = atual
-  requestAnimationFrame(() => (alterado.value = false))
 })
 
 onBeforeUnmount(() => {
   document.documentElement.style.fontSize = ''
 })
+
+const codigo = computed(
+  () => `html { font-size: ${fonteNavegador.value}px; } /* fonte "${nomePreset.value}" */
+
+.anuncio-px .titulo  { font-size: 20px; }      /* = 20px sempre */
+.anuncio-rem .titulo { font-size: 1.25rem; }   /* = ${tituloRem.value}px agora */`,
+)
 </script>
 
 <template>
-  <div class="simulador">
-    <div class="simulador__controles">
-      <label class="campo" for="fonte-navegador">
-        Tamanho da fonte do navegador
-        <span class="simulador__valor">
-          {{ fonteNavegador }}px <small>· {{ presetAtual }}</small>
-        </span>
-      </label>
-      <input
-        id="fonte-navegador"
-        v-model.number="fonteNavegador"
-        type="range"
-        min="12"
-        max="24"
-        step="1"
-        list="presets-fonte"
-        aria-describedby="fonte-navegador-ajuda"
-      />
-      <datalist id="presets-fonte">
-        <option v-for="preset in presets" :key="preset.valor" :value="preset.valor" :label="preset.nome"></option>
-      </datalist>
-      <div class="simulador__presets" aria-hidden="true">
-        <span v-for="preset in presets" :key="preset.valor">{{ preset.valor }}</span>
+  <BancadaLab
+    id="lab-02"
+    numero="02"
+    titulo="Simulador de leitura"
+    resumo="Dois anúncios idênticos: o A tem todos os tamanhos em px, o B usa os mesmos valores em rem. Mude a fonte do navegador e veja qual deles respeita quem lê."
+    @reset="resetar"
+  >
+    <template #controles>
+      <CampoSegmentado v-model="fonteNavegador" legenda="Tamanho da fonte do navegador" :opcoes="presets" :mono="false" />
+      <div class="field">
+        <div class="field__top">
+          <label for="lab02-fonte">Ajuste fino</label>
+          <output for="lab02-fonte" class="field__value">{{ fonteNavegador }}px</output>
+        </div>
+        <input id="lab02-fonte" v-model.number="fonteNavegador" type="range" min="12" max="24" step="1" />
       </div>
-      <p id="fonte-navegador-ajuda" class="simulador__ajuda">
-        O slider muda o <code>font-size</code> do elemento <code>&lt;html&gt;</code>, exatamente
-        o que acontece quando alguém altera a fonte nas configurações do navegador. Repare que o
-        guia inteiro cresce junto, porque ele também foi escrito em <code>rem</code>.
+      <p class="aviso">
+        Este controle muda de verdade o <code>font-size</code> do <code>&lt;html&gt;</code>. O guia inteiro cresce
+        junto, porque também foi escrito em rem. Ao sair da página, tudo volta ao normal.
       </p>
-      <button type="button" class="botao botao--contorno" :disabled="!alterado" @click="restaurar">
-        Restaurar tamanho original
-      </button>
-    </div>
+    </template>
 
-    <div class="simulador__leitura" aria-live="polite">
-      <p><strong>1rem agora vale {{ fonteNavegador }}px.</strong></p>
+    <template #palco>
+      <div class="anuncios">
+        <figure class="anuncios__coluna">
+          <figcaption class="anuncios__legenda anuncios__legenda--px">A · tudo em px</figcaption>
+          <article class="anuncio" style="padding: 16px; gap: 8px; font-size: 14px">
+            <span class="anuncio__foto" style="height: 112px"></span>
+            <span class="anuncio__tag" style="font-size: 12px; padding: 4px 8px">Aluguel</span>
+            <h4 class="anuncio__titulo" style="font-size: 20px">Apartamento com 2 quartos perto do metrô</h4>
+            <p class="anuncio__preco" style="font-size: 24px">R$ 2.450<span style="font-size: 14px">/mês</span></p>
+            <p class="anuncio__detalhes" style="font-size: 14px">68 m² · 1 vaga · aceita pets</p>
+          </article>
+        </figure>
+        <figure class="anuncios__coluna">
+          <figcaption class="anuncios__legenda anuncios__legenda--rem">B · tudo em rem</figcaption>
+          <article class="anuncio" style="padding: 1rem; gap: 0.5rem; font-size: 0.875rem">
+            <span class="anuncio__foto" style="height: 7rem"></span>
+            <span class="anuncio__tag" style="font-size: 0.75rem; padding: 0.25rem 0.5rem">Aluguel</span>
+            <h4 class="anuncio__titulo" style="font-size: 1.25rem">Apartamento com 2 quartos perto do metrô</h4>
+            <p class="anuncio__preco" style="font-size: 1.5rem">R$ 2.450<span style="font-size: 0.875rem">/mês</span></p>
+            <p class="anuncio__detalhes" style="font-size: 0.875rem">68 m² · 1 vaga · aceita pets</p>
+          </article>
+        </figure>
+      </div>
+    </template>
+
+    <template #narracao>
       <p>
-        Título do cartão em px: <code>20px</code> (sempre 20px) · título do cartão em rem:
-        <code>1.25rem</code> = {{ tituloRem }}px
+        <strong>1rem agora vale {{ fonteNavegador }}px.</strong> O título de A continua com 20px; o de B tem
+        1.25rem = {{ tituloRem }}px.
       </p>
-    </div>
+      <p v-if="fonteNavegador > 16">
+        Para quem escolheu a fonte "{{ nomePreset }}", o anúncio A ignora a preferência: é o problema da
+        Pergunta-guia 02.
+      </p>
+      <p v-else-if="fonteNavegador < 16">Com fonte menor, o B encolhe junto; o A fica do mesmo tamanho.</p>
+      <p v-else>Com a fonte padrão, os dois parecem iguais. A diferença só aparece quando alguém muda a configuração.</p>
+    </template>
 
-    <div class="simulador__cartoes">
-      <figure class="simulador__coluna">
-        <figcaption class="simulador__legenda simulador__legenda--px">Cartão A · tudo em px</figcaption>
-        <article
-          class="anuncio"
-          style="padding: 16px; gap: 8px; border-radius: 12px; font-size: 14px"
-        >
-          <svg
-            class="anuncio__foto"
-            style="height: 112px; border-radius: 8px"
-            viewBox="0 0 320 112"
-            preserveAspectRatio="xMidYMid slice"
-            role="img"
-            aria-label="Ilustração de um prédio residencial"
-          >
-            <rect width="320" height="112" fill="#ece6fd" />
-            <circle cx="268" cy="30" r="14" fill="#f0b545" />
-            <rect x="40" y="26" width="96" height="86" fill="#5b34c9" />
-            <rect x="136" y="46" width="78" height="66" fill="#42239a" />
-            <g fill="#d6c9fb">
-              <rect x="54" y="38" width="16" height="14" /><rect x="80" y="38" width="16" height="14" /><rect x="106" y="38" width="16" height="14" />
-              <rect x="54" y="62" width="16" height="14" /><rect x="80" y="62" width="16" height="14" /><rect x="106" y="62" width="16" height="14" />
-              <rect x="150" y="58" width="14" height="12" /><rect x="176" y="58" width="14" height="12" />
-              <rect x="150" y="80" width="14" height="12" /><rect x="176" y="80" width="14" height="12" />
-            </g>
-          </svg>
-          <span class="anuncio__tag" style="font-size: 12px; padding: 4px 8px; border-radius: 4px">
-            Aluguel
-          </span>
-          <h3 class="anuncio__titulo" style="font-size: 20px">
-            Apartamento com 2 quartos perto do metrô
-          </h3>
-          <p class="anuncio__preco" style="font-size: 24px">R$ 2.450<span style="font-size: 14px">/mês</span></p>
-          <p class="anuncio__detalhes" style="font-size: 14px">68 m² · 1 vaga · 2º andar · aceita pets</p>
-          <span class="anuncio__botao" style="font-size: 14px; padding: 10px 16px; border-radius: 6px">
-            Agendar visita
-          </span>
-        </article>
-      </figure>
-
-      <figure class="simulador__coluna">
-        <figcaption class="simulador__legenda simulador__legenda--rem">Cartão B · tudo em rem</figcaption>
-        <article
-          class="anuncio"
-          style="padding: 1rem; gap: 0.5rem; border-radius: 0.75rem; font-size: 0.875rem"
-        >
-          <svg
-            class="anuncio__foto"
-            style="height: 7rem; border-radius: 0.5rem"
-            viewBox="0 0 320 112"
-            preserveAspectRatio="xMidYMid slice"
-            role="img"
-            aria-label="Ilustração de um prédio residencial"
-          >
-            <rect width="320" height="112" fill="#ece6fd" />
-            <circle cx="268" cy="30" r="14" fill="#f0b545" />
-            <rect x="40" y="26" width="96" height="86" fill="#5b34c9" />
-            <rect x="136" y="46" width="78" height="66" fill="#42239a" />
-            <g fill="#d6c9fb">
-              <rect x="54" y="38" width="16" height="14" /><rect x="80" y="38" width="16" height="14" /><rect x="106" y="38" width="16" height="14" />
-              <rect x="54" y="62" width="16" height="14" /><rect x="80" y="62" width="16" height="14" /><rect x="106" y="62" width="16" height="14" />
-              <rect x="150" y="58" width="14" height="12" /><rect x="176" y="58" width="14" height="12" />
-              <rect x="150" y="80" width="14" height="12" /><rect x="176" y="80" width="14" height="12" />
-            </g>
-          </svg>
-          <span class="anuncio__tag" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 0.25rem">
-            Aluguel
-          </span>
-          <h3 class="anuncio__titulo" style="font-size: 1.25rem">
-            Apartamento com 2 quartos perto do metrô
-          </h3>
-          <p class="anuncio__preco" style="font-size: 1.5rem">R$ 2.450<span style="font-size: 0.875rem">/mês</span></p>
-          <p class="anuncio__detalhes" style="font-size: 0.875rem">68 m² · 1 vaga · 2º andar · aceita pets</p>
-          <span class="anuncio__botao" style="font-size: 0.875rem; padding: 0.625rem 1rem; border-radius: 0.375rem">
-            Agendar visita
-          </span>
-        </article>
-      </figure>
-    </div>
-  </div>
+    <template #codigo>
+      <CodigoEditor arquivo="anuncios.css" linguagem="css" :codigo="codigo" :destaque="[4]" />
+    </template>
+  </BancadaLab>
 </template>
 
 <style scoped>
-.simulador {
+.aviso {
+  font-size: var(--text-xs);
+  color: var(--color-ink-3);
+}
+
+.anuncios {
   display: grid;
-  gap: var(--espaco-5);
-  min-width: 0;
-}
-
-.simulador__controles {
-  display: grid;
-  gap: var(--espaco-3);
-  max-width: 34rem;
-}
-
-.simulador__controles .campo {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--espaco-2);
-}
-
-.simulador__valor {
-  font-family: var(--fonte-codigo);
-  color: var(--cor-roxo-700);
-}
-
-.simulador__valor small {
-  color: var(--cor-tinta-suave);
-}
-
-.simulador__presets {
-  display: flex;
-  justify-content: space-between;
-  margin-top: calc(-1 * var(--espaco-2));
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
-  color: var(--cor-tinta-suave);
-}
-
-.simulador__ajuda {
-  font-size: var(--texto-sm);
-  color: var(--cor-tinta-suave);
-}
-
-.simulador__controles .botao {
-  justify-self: start;
-}
-
-.simulador__leitura {
-  display: grid;
-  gap: var(--espaco-1);
-  padding: var(--espaco-3) var(--espaco-4);
-  border-radius: var(--raio-md);
-  background: var(--cor-ambar-suave);
-  font-size: var(--texto-sm);
-}
-
-.simulador__cartoes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
-  gap: var(--espaco-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: var(--space-4);
   align-items: start;
 }
 
-.simulador__coluna {
+.anuncios__coluna {
   display: grid;
-  gap: var(--espaco-2);
-  margin: 0;
+  gap: var(--space-2);
   min-width: 0;
 }
 
-.simulador__legenda {
-  font-family: var(--fonte-codigo);
-  font-size: var(--texto-xs);
+.anuncios__legenda {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
   font-weight: 500;
-  letter-spacing: 0.04em;
   text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
 }
 
-.simulador__legenda--px {
-  color: var(--cor-erro);
+.anuncios__legenda--px {
+  color: var(--color-bad);
 }
 
-.simulador__legenda--rem {
-  color: var(--cor-sucesso);
+.anuncios__legenda--rem {
+  color: var(--color-ok);
 }
 
 .anuncio {
   display: grid;
   justify-items: start;
   min-width: 0;
-  border: var(--borda);
-  background: var(--cor-superficie);
-  line-height: 1.4;
+  border: var(--border-strong);
+  background: #fff;
+  line-height: 1.35;
 }
 
 .anuncio__foto {
+  display: block;
   width: 100%;
+  background:
+    linear-gradient(135deg, transparent 50%, rgb(255 255 255 / 0.18) 50%) 0 0 / 100% 100%,
+    linear-gradient(var(--color-accent), var(--color-accent-ink));
 }
 
 .anuncio__tag {
-  background: var(--cor-roxo-100);
-  color: var(--cor-roxo-800);
-  font-weight: 600;
+  background: var(--color-signal);
+  font-family: var(--font-mono);
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .anuncio__titulo {
-  font-family: var(--fonte-texto);
+  font-family: var(--font-body);
   font-weight: 600;
+  font-stretch: 100%;
   line-height: 1.25;
-  color: var(--cor-tinta);
 }
 
 .anuncio__preco {
-  font-family: var(--fonte-titulo);
+  font-family: var(--font-heading);
   font-weight: 700;
-  color: var(--cor-roxo-800);
+  font-stretch: 80%;
 }
 
 .anuncio__detalhes {
-  color: var(--cor-tinta-suave);
-}
-
-.anuncio__botao {
-  background: var(--cor-roxo-700);
-  color: #fff;
-  font-weight: 600;
+  color: var(--color-ink-3);
 }
 </style>
