@@ -1,4 +1,4 @@
-# Elastic: Guia Interativo de Responsividade
+# Elástico : Guia Interativo de Responsividade 
 
 Guia prático, feito em **Vue 3 + Vite + Vue Router**, que ensina a criar páginas que funcionam em qualquer tela. Cada seção tem uma explicação curta, um exemplo de código comentado, a resposta à pergunta-guia e as fontes consultadas.
 
