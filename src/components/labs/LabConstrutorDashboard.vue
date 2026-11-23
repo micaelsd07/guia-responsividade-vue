@@ -70,7 +70,7 @@ onBeforeUnmount(() => observador?.disconnect())
         />
       </label>
       <label class="campo" for="lab-gap">
-        Espaço entre cartões · gap (rem)
+        Espaço entre cartões, gap (rem)
         <input
           id="lab-gap"
           v-model.number="espacamento"

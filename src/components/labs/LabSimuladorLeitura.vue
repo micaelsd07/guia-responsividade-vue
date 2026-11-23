@@ -50,7 +50,7 @@ onBeforeUnmount(() => {
       <label class="campo" for="fonte-navegador">
         Tamanho da fonte do navegador
         <span class="simulador__valor">
-          {{ fonteNavegador }}px <small>· {{ presetAtual }}</small>
+          {{ fonteNavegador }}px <small>({{ presetAtual }})</small>
         </span>
       </label>
       <input
@@ -82,14 +82,14 @@ onBeforeUnmount(() => {
     <div class="simulador__leitura" aria-live="polite">
       <p><strong>1rem agora vale {{ fonteNavegador }}px.</strong></p>
       <p>
-        Título do cartão em px: <code>20px</code> (sempre 20px) · título do cartão em rem:
+        Título do cartão em px: <code>20px</code> (sempre 20px). Título do cartão em rem:
         <code>1.25rem</code> = {{ tituloRem }}px
       </p>
     </div>
 
     <div class="simulador__cartoes">
       <figure class="simulador__coluna">
-        <figcaption class="simulador__legenda simulador__legenda--px">Cartão A · tudo em px</figcaption>
+        <figcaption class="simulador__legenda simulador__legenda--px">Cartão A: tudo em px</figcaption>
         <article
           class="anuncio"
           style="padding: 16px; gap: 8px; border-radius: 12px; font-size: 14px"
@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
             Apartamento com 2 quartos perto do metrô
           </h3>
           <p class="anuncio__preco" style="font-size: 24px">R$ 2.450<span style="font-size: 14px">/mês</span></p>
-          <p class="anuncio__detalhes" style="font-size: 14px">68 m² · 1 vaga · 2º andar · aceita pets</p>
+          <p class="anuncio__detalhes" style="font-size: 14px">68 m², 1 vaga, 2º andar, aceita pets</p>
           <span class="anuncio__botao" style="font-size: 14px; padding: 10px 16px; border-radius: 6px">
             Agendar visita
           </span>
@@ -128,7 +128,7 @@ onBeforeUnmount(() => {
       </figure>
 
       <figure class="simulador__coluna">
-        <figcaption class="simulador__legenda simulador__legenda--rem">Cartão B · tudo em rem</figcaption>
+        <figcaption class="simulador__legenda simulador__legenda--rem">Cartão B: tudo em rem</figcaption>
         <article
           class="anuncio"
           style="padding: 1rem; gap: 0.5rem; border-radius: 0.75rem; font-size: 0.875rem"
@@ -159,7 +159,7 @@ onBeforeUnmount(() => {
             Apartamento com 2 quartos perto do metrô
           </h3>
           <p class="anuncio__preco" style="font-size: 1.5rem">R$ 2.450<span style="font-size: 0.875rem">/mês</span></p>
-          <p class="anuncio__detalhes" style="font-size: 0.875rem">68 m² · 1 vaga · 2º andar · aceita pets</p>
+          <p class="anuncio__detalhes" style="font-size: 0.875rem">68 m², 1 vaga, 2º andar, aceita pets</p>
           <span class="anuncio__botao" style="font-size: 0.875rem; padding: 0.625rem 1rem; border-radius: 0.375rem">
             Agendar visita
           </span>

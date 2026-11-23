@@ -28,11 +28,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', fecharComEsc))
 <template>
   <header class="topo">
     <div class="topo__barra">
-      <RouterLink to="/importancia" class="marca" aria-label="Elástico, página inicial">
+      <RouterLink to="/importancia" class="marca" aria-label="Elastic, página inicial">
         <span class="marca__icone" aria-hidden="true">
           <span></span><span></span><span></span>
         </span>
-        <span class="marca__nome">Elástico</span>
+        <span class="marca__nome">Elastic</span>
         <span class="marca__sub">guia de responsividade</span>
       </RouterLink>
 

@@ -105,7 +105,7 @@ const fontes = [
                 <div class="desktop" aria-hidden="true">
                   <div class="desktop__topo">
                     <span class="desktop__logo">Loja Roxa</span>
-                    <span class="desktop__links">Início · Produtos · Contato · Carrinho</span>
+                    <span class="desktop__links">Início, Produtos, Contato, Carrinho</span>
                   </div>
                   <div class="desktop__heroi">
                     <p>Ofertas da semana</p>

@@ -15,7 +15,7 @@ const proxima = computed(() => secoes[indice.value + 1])
   <nav class="paginador" aria-label="Navegação entre seções">
     <RouterLink v-if="anterior" :to="anterior.caminho" class="paginador__link">
       <span class="paginador__direcao">← Anterior</span>
-      <span class="paginador__titulo">{{ anterior.numero }} · {{ anterior.titulo }}</span>
+      <span class="paginador__titulo">{{ anterior.numero }} {{ anterior.titulo }}</span>
     </RouterLink>
     <span v-else></span>
     <RouterLink
@@ -24,7 +24,7 @@ const proxima = computed(() => secoes[indice.value + 1])
       class="paginador__link paginador__link--proxima"
     >
       <span class="paginador__direcao">Próxima →</span>
-      <span class="paginador__titulo">{{ proxima.numero }} · {{ proxima.titulo }}</span>
+      <span class="paginador__titulo">{{ proxima.numero }} {{ proxima.titulo }}</span>
     </RouterLink>
   </nav>
 </template>

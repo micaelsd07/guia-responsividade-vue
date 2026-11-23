@@ -21,7 +21,7 @@ function atualizar() {
   }
 }
 
-const rotulo = computed(() => `${largura.value}px · ${ativo.value.nome}`)
+const rotulo = computed(() => `${largura.value}px (${ativo.value.nome})`)
 
 onMounted(() => {
   atualizar()

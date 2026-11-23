@@ -83,7 +83,7 @@ const fontes = [
   },
   {
     titulo: 'Understanding Success Criterion 1.4.4: Resize Text',
-    autor: 'W3C · WCAG 2.1',
+    autor: 'W3C, WCAG 2.1',
     url: 'https://www.w3.org/WAI/WCAG21/Understanding/resize-text.html',
   },
   {

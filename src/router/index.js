@@ -31,8 +31,8 @@ const router = createRouter({
 
 router.afterEach((to) => {
   document.title = to.meta.titulo
-    ? `${to.meta.titulo} · Elástico`
-    : 'Elástico · Guia de Responsividade'
+    ? `${to.meta.titulo} | Elastic`
+    : 'Elastic | Guia de Responsividade'
 })
 
 export default router

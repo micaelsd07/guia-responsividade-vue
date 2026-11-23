@@ -73,7 +73,7 @@ const fontes = [
     <BlocoSecao id="explicacao" rotulo="Explicação" titulo="Uma dimensão ou duas?">
       <div class="comparativo">
         <article class="modelo">
-          <p class="modelo__selo">1D · Flexbox</p>
+          <p class="modelo__selo">1D: Flexbox</p>
           <div class="diagrama diagrama--flex" aria-hidden="true">
             <span></span><span></span><span></span>
           </div>
@@ -84,7 +84,7 @@ const fontes = [
           <p class="modelo__uso">Ideal para: menus, barras de botões, alinhar ícone + texto, centralizar algo.</p>
         </article>
         <article class="modelo">
-          <p class="modelo__selo">2D · Grid</p>
+          <p class="modelo__selo">2D: Grid</p>
           <div class="diagrama diagrama--grid" aria-hidden="true">
             <span></span><span></span><span></span><span></span><span></span>
           </div>

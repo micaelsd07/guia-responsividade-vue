@@ -1,7 +1,7 @@
 <template>
   <footer class="rodape">
     <div class="rodape__interno">
-      <p class="rodape__marca">Elástico</p>
+      <p class="rodape__marca">Elastic</p>
       <p>
         Guia interativo de responsividade e boas práticas, feito com Vue 3, Vite e Vue Router.
         Todo o layout é mobile-first, com fontes e espaçamentos em <code>rem</code>.
